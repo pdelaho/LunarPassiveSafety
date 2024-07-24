@@ -48,7 +48,7 @@ initial_conditions_M = [x0_M, y0_M, z0_M, vx0_M, vy0_M, vz0_M]
 
 # Add a part to change the mean anomaly at which the target spacecraft starts
 # Assuming that the first initial conditions to get the target's orbit are at the apoapsis, ie M = 180°
-M = np.radians(0) # TO CHANGE TO TRY DIFFERENT INITIAL CONDITIONS, in radians
+M = np.radians(340) # TO CHANGE TO TRY DIFFERENT INITIAL CONDITIONS
 # Using M = 2*pi*t/T where T is the orbit period
 # Not sure if the following line is the correct
 t = M*period/(2*np.pi) - period/2 # time at which we need to stop the simulation to get the "new" initial conditions
@@ -132,7 +132,7 @@ vel_bary = (R.T @ np.asarray(initial_conditions_chaser_M[3:6]).reshape((3,1))).r
 
 # Writing the initial conditions in a csv file
 # Saving the target and chaser spacecrafts' trajectories in a csv file
-file = open("initial_conditions.csv","w")
+file = open("dynamics\initial_conditions.csv","w")
 writer = csv.writer(file)
 
 # 1st saving the initial conditions in the Moon frame for the target part and in the LVLH frame for the chaser part
