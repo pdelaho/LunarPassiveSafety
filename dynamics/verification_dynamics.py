@@ -6,7 +6,7 @@ from numpy.random import rand
 import matplotlib.pyplot as plt
 import csv
 
-from Archives.linear_chaser_dynamics import *
+from linear_chaser_dynamics import *
 
 # # Comparing the 2 functions depending on how we compute the derivatives of the target's position (but the vectors described are exactly the same)
 # orbit = integrate.odeint(propagator_absolute,adjusted_conditions[:6],t_simulation,args=(mu,))

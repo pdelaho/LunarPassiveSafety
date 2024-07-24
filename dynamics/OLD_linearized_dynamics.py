@@ -8,7 +8,7 @@ from numpy.random import rand
 import matplotlib.pyplot as plt
 import csv
 
-from Archives.linear_chaser_dynamics import *
+from linear_chaser_dynamics import *
 
 r12 = 384400 # km, distance between primary attractors, from JPL website 389703
 mu = 1.215e-2 # no unit, mass parameter of the system, from JPL website 1.215058560962404e-2
