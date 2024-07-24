@@ -6,13 +6,14 @@ def single_shooting(initial_state,residual,jacobian):
     new_initial_state = initial_state.reshape((3,1)) - np.linalg.pinv(jacobian)@(residual.reshape((3,1)))
     return new_initial_state
 
-def optimization(initial_conditions,period,max_iter=1000,tol=1e-5,step=3000):
+def optimization(initial_conditions,period,mu,max_iter=1000,tol=1e-5,step=3000):
     adjusted_conditions = initial_conditions
     tf = period/2
     t_simulation = np.linspace(0,tf,step)
+    max_iter = 1000
     
     for i in range(max_iter):
-        y_temp = integrate.odeint(halo_propagator_with_STM,adjusted_conditions,t_simulation,rtol=1e-12, atol=1e-12)
+        y_temp = integrate.odeint(halo_propagator_with_STM,adjusted_conditions,t_simulation,args=(mu,),rtol=1e-12, atol=1e-12)
         f = np.matrix([y_temp[-1,1], y_temp[-1,3], y_temp[-1,5]])
         
         if np.linalg.norm(f)<tol:
@@ -21,7 +22,7 @@ def optimization(initial_conditions,period,max_iter=1000,tol=1e-5,step=3000):
             break
         else:
             # use the ode function to compute the derivatives easily
-            state_end = halo_propagator(y_temp[-1,:],t_simulation[-1])
+            state_end = halo_propagator(y_temp[-1,:],t_simulation[-1],args=(mu,))
             
             df = np.matrix([[y_temp[-1,12], y_temp[-1,16], state_end[1]],
                   [y_temp[-1,24], y_temp[-1,28], state_end[3]],
