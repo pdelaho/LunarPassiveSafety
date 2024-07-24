@@ -253,3 +253,23 @@ def integrate_matrix(state,t,mu):
     ds[6:] = der
     
     return ds
+
+def linearize_translation(traj, time):
+    n_time = len(time) 
+    dt = time[1]-time[0]
+
+    psi      = np.empty(shape=(n_time, 6, 6), dtype=float)   # synodic -> LVLH rotation matrix 
+    stm      = np.empty(shape=(n_time-1, 6, 6),   dtype=float)
+    cim      = np.empty(shape=(n_time-1, 6, 3),   dtype=float)
+    
+    for i in range(n_time):
+        
+        psi[i] = map_mtx_roe_to_rtn(traj[i])
+        
+        if i < n_time-1:
+            stm[i]    = state_transition_roe(traj[i],dt)
+            cim[i]    = control_input_matrix_roe(traj[i])
+        
+    mats = {"stm": stm, "cim": cim, "psi": psi}
+
+    return mats

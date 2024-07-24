@@ -4,6 +4,15 @@ import scipy as sc
 import cvxpy as cp
 import matplotlib.pyplot as plt
 import csv
+import scipy.integrate as integrate
+import numpy as np
+import numpy.linalg as la
+from numpy import cross
+from numpy.random import rand
+import matplotlib.pyplot as plt
+import csv
+import scipy as sc
+import time
 
 # Importing linear dynamics of the chaser from another file
 from linear_dynamics_LVLH import *
@@ -30,7 +39,6 @@ TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the 
 L1x = 0.83691513 # nd, position of the L1 point along the x direction
 L2x = 1.15568217 # nd, position of the L2 point along the x direction
 
-# Using the same notation as Yuji in his github code
 nx = 6 # dimension of the state vector
 nu = 3 # dimension of the control input vector
 n_time = len(data_target) # number of time steps
