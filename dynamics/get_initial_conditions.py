@@ -6,10 +6,12 @@ import csv
 from numpy.random import rand
 from numpy import cross
 import scipy
-import scipy.integrate
+from scipy.integrate import odeint
 import random
 
 from linear_dynamics_LVLH import *
+from dynamics_translation import *
+from dynamics_linearized import *
 
 # General data for the CR3BP
 r12 = 384400 # km, distance between primary attractors, from JPL website 389703
@@ -167,3 +169,57 @@ data = np.concatenate((initial_conditions_M,[V2_LVLH[0,0],V2_LVLH[0,1],V2_LVLH[0
 writer.writerow(data)
 
 file.close()
+
+def initial_conditions_bary_to_synodic(bary_init_cond):
+    R = np.matrix([[-1, 0, 0],[0, -1, 0],[0, 0, 1]]) # Rotation matrix to go from the bary to the synodic frame
+    
+    initial_position_synodic = R @ (bary_init_cond[:3].reshape((3,1)) - np.asarray([1-mu, 0, 0]).reshape((3,1)))
+    initial_velocity_synodic = R @ bary_init_cond[3:6].reshape((3,1))
+
+    return np.concatenate(([initial_position_synodic[i,0] for i in range(3)], [initial_velocity_synodic[j,0] for j in range(3)]))
+
+def lvlh_to_synodic(lvlh_traj, target_traj, mu):
+    r_syn = np.asarray(target_traj[:3])
+    r_dot_syn = np.asarray(target_traj[3:6])  
+
+    A_syn_to_lvlh = matrix_synodic_to_lvlh(target_traj[:6])
+    rho_lvlh = np.asarray(lvlh_traj[:3]).reshape((3,1))
+    [rho_x0_syn, rho_y0_syn, rho_z0_syn] = ((A_syn_to_lvlh.T) @ rho_lvlh).reshape(3)
+
+    h = cross(r_syn, r_dot_syn)
+    der_state = propagator_absolute(target_traj[:6],0,mu)
+    r_ddot_syn = der_state[3:6]
+    omega_lm_lvlh = np.zeros(3)
+    omega_lm_lvlh[1] = - la.norm(h)/(la.norm(target_traj[:3])**2)
+    omega_lm_lvlh[2] = -la.norm(target_traj[:3])/(la.norm(h)**2) * np.dot(h, r_ddot_syn)
+
+    rho_dot_lvlh = np.zeros((3,1))
+    rho_dot_lvlh[0] = lvlh_traj[3]
+    rho_dot_lvlh[1] = lvlh_traj[4]
+    rho_dot_lvlh[2] = lvlh_traj[5]
+
+    rho_dot_syn = (A_syn_to_lvlh.T)@(rho_dot_lvlh + cross(omega_lm_lvlh.reshape(3),rho_lvlh.reshape(3)).reshape((3,1)))
+    rho_vx0_syn = rho_dot_syn[0,0]
+    rho_vy0_syn = rho_dot_syn[1,0]
+    rho_vz0_syn = rho_dot_syn[2,0]
+
+    # initial_conditions_chaser_M = [x0_M + rho_x0_M, y0_M + rho_y0_M, z0_M + rho_z0_M, vx0_M + rho_vx0_M, vy0_M + rho_vy0_M, vz0_M + rho_vz0_M]
+    synodic_traj = target_traj[:6].reshape(6) + np.asarray([rho_x0_syn, rho_y0_syn, rho_z0_syn, rho_vx0_syn, rho_vy0_syn, rho_vz0_syn]).reshape(6)
+    
+    return synodic_traj
+
+def synodic_to_lvlh(syn_traj, target_traj, mu):
+    # TODO
+    return
+    
+def get_final_condition(initial_condition, target_traj, time, mu):
+    # 1st step, convert the initial condition from lvlh to synodic
+    initial_condition_syn = lvlh_to_synodic(initial_condition, target_traj[0,:], mu)
+    
+    # 2nd step, integrate the non-linear dynamics
+    chaser_traj_syn = odeint(dynamics_synodic, initial_condition_syn, time, args=(mu,))
+    
+    # 3rd step, transform the final condition back to the lvlh frame
+    chaser_traj_lvlh = synodic_to_lvlh(chaser_traj_syn[-1,:],target_traj[-1,:], mu)
+    
+    return chaser_traj_lvlh

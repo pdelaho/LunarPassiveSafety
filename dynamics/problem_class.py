@@ -1,6 +1,7 @@
 import dataclasses
 
 from dynamics_linearized import *
+from get_initial_conditions import *
 
 
 class CR3BP_RPOD_OCP:
@@ -49,7 +50,11 @@ class CR3BP_RPOD_OCP:
         # Generates the reference trajectory of the target spacecraft
         self.target_traj, self.time_hrz, self.dt_hrz = get_traj_ref(self.initial_conditions_target, self.M0, self.tf_orbit, self.period, self.mu, n_time)
         
-        
-    def linarize_trans(self):
+    def linearize_trans(self):
         mats = linearize_translation(self.mu, self.target_traj, self.time_hrz)
         self.stm, self.cim, self.psi = mats["stm"], mats["cim"], mats["psi"]
+        
+    def get_final_condition(self):
+        # For now the final condition is given by propagating the non-linear dynamics in the synodic frame but conditiond are given
+        # in the LVLH frame
+        self.μf = get_final_condition(self.μ0, self.target_traj, self.time_hrz, self.mu)
