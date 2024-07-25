@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 def plot_target_traj_syn(target_traj, L_point, mu):
     fig = plt.figure()
@@ -27,5 +28,12 @@ def plot_chaser_traj_lvlh(chaser_traj):
     plt.title("Chaser's trajectory in the LVLH frame")
     plt.grid()
     
-def analysis():
-    return
+def analysis(chaser_nonlin_traj,chaser_lin_traj,n_time):
+    error_lin_pos = np.empty(n_time)
+    error_lin_vel = np.empty(n_time)
+    
+    for i in range(n_time):
+        error_lin_pos[i] = np.linalg.norm(chaser_nonlin_traj[i,:3] - chaser_lin_traj[i,:3])
+        error_lin_vel[i] = np.linalg.norm(chaser_nonlin_traj[i,3:6] - chaser_lin_traj[i,3:6])
+    
+    return error_lin_pos, error_lin_vel

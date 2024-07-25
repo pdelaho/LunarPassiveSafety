@@ -35,7 +35,7 @@ def ocp_cvx(prob):
         J = cp.sum(cp.norm(a[:,:3], 2, axis=0)) + cp.sum(cp.norm(a[:,3:], 2, axis=0))
     
     cost += J
-    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e1   # slack variable penalty 
+    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e3   # slack variable penalty 
     
     p = cp.Problem(cp.Minimize(cost), con)
     p.solve(solver=cp.MOSEK, verbose=False)
@@ -45,18 +45,6 @@ def ocp_cvx(prob):
     J_opt  = J.value
     status = p.status
     value  = p.value
-
-    # try:
-    #     prob.solve(solver=cp.MOSEK, verbose=False)
-    #     s_opt  = s.value
-    #     a_opt  = a.value
-    #     status = prob.status
-    #     value  = prob.value
-    # except:
-    #     s_opt  = None
-    #     a_opt  = None
-    #     status = 'infeasible'
-    #     value  = None
 
     sol = {"mu": s_opt, "v": a_opt, "l": l_opt, "status": status, "control_cost": J_opt, "value": value}
     return sol

@@ -1,7 +1,7 @@
 import dataclasses
 
 from dynamics_linearized import *
-from get_initial_conditions import *
+# from get_initial_conditions import *
 
 
 class CR3BP_RPOD_OCP:
@@ -55,7 +55,7 @@ class CR3BP_RPOD_OCP:
         mats = linearize_translation(self.mu, self.target_traj, self.time_hrz, self.control)
         self.stm, self.cim, self.psi = mats["stm"], mats["cim"], mats["psi"]
         
-    def get_final_condition(self):
+    def get_chaser_nonlin_traj(self):
         # For now the final condition is given by propagating the non-linear dynamics in the synodic frame but conditiond are given
         # in the LVLH frame
-        self.μf = get_final_condition(self.μ0, self.target_traj, self.time_hrz, self.mu)
+        self.chaser_nonlin_traj = get_chaser_nonlin_traj(self.μ0, self.target_traj, self.time_hrz, self.mu)

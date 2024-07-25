@@ -1,5 +1,7 @@
 import numpy as np
+
 from dynamics_translation import *
+from useful_small_functions import *
 
 def linearize_translation(mu, traj, time, control):
     n_time = len(time) 
