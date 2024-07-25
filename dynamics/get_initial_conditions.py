@@ -187,7 +187,7 @@ def lvlh_to_synodic(lvlh_traj, target_traj, mu):
     [rho_x0_syn, rho_y0_syn, rho_z0_syn] = ((A_syn_to_lvlh.T) @ rho_lvlh).reshape(3)
 
     h = cross(r_syn, r_dot_syn)
-    der_state = propagator_absolute(target_traj[:6],0,mu)
+    der_state = dynamics_synodic(target_traj[:6],0,mu)
     r_ddot_syn = der_state[3:6]
     omega_lm_lvlh = np.zeros(3)
     omega_lm_lvlh[1] = - la.norm(h)/(la.norm(target_traj[:3])**2)
@@ -209,8 +209,21 @@ def lvlh_to_synodic(lvlh_traj, target_traj, mu):
     return synodic_traj
 
 def synodic_to_lvlh(syn_traj, target_traj, mu):
-    # TODO
-    return
+    rho_syn = syn_traj[:3] - target_traj[:3]
+    rho_dot_syn = syn_traj[3:6] - target_traj[3:6]
+    
+    A_syn_to_lvlh = matrix_synodic_to_lvlh(target_traj)
+    rho_lvlh = A_syn_to_lvlh @ (rho_syn.reshape((3,1)))
+    
+    h = np.cross(target_traj[:3].reshape(3),target_traj[3:6].reshape(3))
+    der = dynamics_synodic(target_traj[:6],0,mu)
+    r_ddot = der[3:6]
+    omega_lm_lvlh = np.zeros((3,1))
+    omega_lm_lvlh[1] = - la.norm(h)/(la.norm(target_traj[:3])**2)
+    omega_lm_lvlh[2] = - la.norm(target_traj[:3])/(la.norm(h)**2) * np.dot(h.reshape(3),r_ddot.reshape(3))
+    rho_dot_lvlh = A_syn_to_lvlh @ rho_dot_syn.reshape((3,1)) - np.cross(omega_lm_lvlh.reshape(3),rho_lvlh.reshape(3)).reshape((3,1))
+    # print(rho_lvlh,rho_dot_lvlh)
+    return np.concatenate((rho_lvlh.reshape(3),rho_dot_lvlh.reshape(3)))
     
 def get_final_condition(initial_condition, target_traj, time, mu):
     # 1st step, convert the initial condition from lvlh to synodic
@@ -221,5 +234,5 @@ def get_final_condition(initial_condition, target_traj, time, mu):
     
     # 3rd step, transform the final condition back to the lvlh frame
     chaser_traj_lvlh = synodic_to_lvlh(chaser_traj_syn[-1,:],target_traj[-1,:], mu)
-    
+    # print(chaser_traj_lvlh)
     return chaser_traj_lvlh

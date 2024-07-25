@@ -25,7 +25,7 @@ def ocp_cvx(prob):
     con = []
     cost = 0 
     con += [s[0] == s_0]
-    con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + c[i] + l[i] for i in range(n_time-1)]
+    con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
     con += [s[-1] == s_f]
 
     
@@ -58,5 +58,5 @@ def ocp_cvx(prob):
     #     status = 'infeasible'
     #     value  = None
 
-    sol = {"mu": s_opt, "v": a_opt, "l": l_opt,"status": status, "control_cost": J_opt, "value": value}
+    sol = {"mu": s_opt, "v": a_opt, "l": l_opt, "status": status, "control_cost": J_opt, "value": value}
     return sol

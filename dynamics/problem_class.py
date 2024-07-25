@@ -14,7 +14,7 @@ class CR3BP_RPOD_OCP:
     def __init__(self,
                  period,initial_conditions_target,iter_max=15,
                  mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
-                 n_time=100,nx=6,nu=3,M0=0,tf=1,mu0=None,muf=None):
+                 n_time=100,nx=6,nu=3,M0=0,tf=1,mu0=None,muf=None,control=False):
         
         # SCP parameters
         self.iter_max = iter_max
@@ -35,6 +35,7 @@ class CR3BP_RPOD_OCP:
         self.nu = nu 
         self.M0 = M0 
         self.tf_orbit = tf   # numer of orbits
+        self.control = control
         
         # boundary condition 
         self.μ0 = mu0 
@@ -51,7 +52,7 @@ class CR3BP_RPOD_OCP:
         self.target_traj, self.time_hrz, self.dt_hrz = get_traj_ref(self.initial_conditions_target, self.M0, self.tf_orbit, self.period, self.mu, n_time)
         
     def linearize_trans(self):
-        mats = linearize_translation(self.mu, self.target_traj, self.time_hrz)
+        mats = linearize_translation(self.mu, self.target_traj, self.time_hrz, self.control)
         self.stm, self.cim, self.psi = mats["stm"], mats["cim"], mats["psi"]
         
     def get_final_condition(self):
