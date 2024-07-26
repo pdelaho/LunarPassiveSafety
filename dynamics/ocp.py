@@ -47,4 +47,5 @@ def ocp_cvx(prob):
     value  = p.value
 
     sol = {"mu": s_opt, "v": a_opt, "l": l_opt, "status": status, "control_cost": J_opt, "value": value}
+    
     return sol
