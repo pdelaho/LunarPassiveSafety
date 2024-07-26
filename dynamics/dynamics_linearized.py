@@ -2,6 +2,8 @@ import numpy as np
 
 from dynamics_translation import *
 from useful_small_functions import *
+from tqdm import tqdm
+
 
 def linearize_translation(mu, traj, time, control):
     n_time = len(time) 
@@ -11,6 +13,7 @@ def linearize_translation(mu, traj, time, control):
     stm      = np.empty(shape=(n_time-1, 6, 6),   dtype=float)
     cim      = np.empty(shape=(n_time-1, 6, 3),   dtype=float)
     
+    # for i in tqdm(range(n_time)):
     for i in range(n_time):
         
         psi[i] = matrix_synodic_to_lvlh(traj[i])
@@ -27,3 +30,4 @@ def linearize_translation(mu, traj, time, control):
     mats = {"stm": stm, "cim": cim, "psi": psi}
 
     return mats
+
