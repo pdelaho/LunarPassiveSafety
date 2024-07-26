@@ -7,10 +7,10 @@ def ocp_cvx(prob):
     Cleanest implementation. Want to merge to this one eventually... (05/06)
     """
 
-    nx, nu = prob.nx, prob.nu
-    A, B = prob.stm, prob.cim # generalized dynamics 
+    nx, nu   = prob.nx, prob.nu
+    A, B     = prob.stm, prob.cim # generalized dynamics 
     s_0, s_f = prob.μ0, prob.μf
-    n_time = prob.n_time    
+    n_time   = prob.n_time    
 
     # normalized vbariables 
     s = cp.Variable((n_time, nx))

@@ -1,4 +1,5 @@
 import numpy as np
+import json
 
 def skew(a):
     """Compute the skew matrix associated to vector a
