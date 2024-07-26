@@ -34,6 +34,11 @@ class OCP:
 
 
 prob = OCP(mats)
+
+# boundary condition 
+prob.μ0 = np.array([100,0,0,0,0,0])
+prob.μf = np.array([0,0,0,0,0,0])
+
 sol = ocp_cvx(prob)
 
 mu = sol["mu"]
