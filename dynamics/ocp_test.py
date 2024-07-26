@@ -42,29 +42,29 @@ prob.μf = np.array([0,0,0,0,0,0])  / LU
 prob.n_time = 200 #len(t)
 
 sol = ocp_cvx(prob) 
-mu  = sol["mu"] 
+s  = sol["mu"] 
 J   = sol["control_cost"]    
 print(f"J (control cost): {J}")
 
 # plot the absolute trajectory (NRHO)
 fig = plt.figure(figsize=(10,8)) 
 ax  = fig.add_subplot(111, projection='3d') 
-ax.plot3D(traj[:,0], traj[:,1], traj[:,2], 'k') 
-ax.scatter3D(traj[0,0], traj[0,1], traj[0,2], c='r', s=100, label='start')  # initial state is apoapsis
-ax.scatter3D(1,0,0, c='orange', s=100, label='Moon')
+ax.plot3D(traj[:,0] , traj[:,1], traj[:,2], 'k') 
+ax.scatter3D(traj[0,0] , traj[0,1], traj[0,2], c='r', s=100, label='start')  # initial state is apoapsis
+ax.scatter3D(1-mu,0,0, c='orange', s=100, label='Moon')
 ax.axis('equal')
 ax.set_xlabel('x, LU')
 ax.set_ylabel('y, LU') 
-ax.set_zlabel('z, LU')
+ax.set_zlabel('z, LU') 
 plt.legend() 
 
 
 # plot the relative trajecotry (scaled in km) in the RTN frame # LVLH [i,j,k] = [T, -N, -R]
 fig = plt.figure(figsize=(10,8)) 
 ax  = fig.add_subplot(111, projection='3d') 
-ax.plot3D(mu[:,0]*LU, -mu[:,1]*LU, -mu[:,2]*LU, 'k') 
-ax.scatter3D(mu[0,0]*LU,  -mu[0,1]*LU,  -mu[0,2]*LU,  c='r', s=100, label='start')
-ax.scatter3D(mu[-1,0]*LU, -mu[-1,1]*LU, -mu[-1,2]*LU, c='b', s=100, label='end')
+ax.plot3D(s[:,0]*LU, -s[:,1]*LU, -s[:,2]*LU, 'k') 
+ax.scatter3D(s[0,0]*LU,  -s[0,1]*LU,  -s[0,2]*LU,  c='r', s=100, label='start')
+ax.scatter3D(s[-1,0]*LU, -s[-1,1]*LU, -s[-1,2]*LU, c='b', s=100, label='end')
 ax.set_xlabel('T, km')
 ax.set_ylabel('N, km')
 ax.set_zlabel('R, km')
