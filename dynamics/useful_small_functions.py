@@ -1,4 +1,5 @@
 import numpy as np
+import json
 
 def skew(a):
     """Compute the skew matrix associated to vector a
@@ -25,3 +26,21 @@ def get_phi(t, A, p=5):
     for i in range(1, p):
         phi += np.linalg.matrix_power(A*t, i) / np.math.factorial(i)
     return phi
+
+
+
+def load_traj_data(fname):
+    """
+    Load trajectory data from a json file.
+    """
+
+    with open(fname, 'r') as json_file:
+        data_dict = json.load(json_file)
+        
+    t     = np.array(data_dict['t'])
+    state = np.array(data_dict['state'])
+    mu    = data_dict['mu']
+    LU    = data_dict['LU']
+    TU    = data_dict['TU']  
+    
+    return t, state, mu, LU, TU
