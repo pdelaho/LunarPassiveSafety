@@ -22,7 +22,7 @@ initial_conditions_synodic = bary_to_synodic(initial_conditions_bary, mu=1.215e-
 p_trans = CR3BP_RPOD_OCP(
     period=T, initial_conditions_target=initial_conditions_synodic, iter_max=15,
     mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
-    n_time=1000,nx=6,nu=3,M0=0,tf=0.25,mu0=None,muf=None,control=True
+    n_time=1000,nx=6,nu=3,M0=180,tf=0.07,mu0=None,muf=None,control=True
 )
 
 # Set-up of the dynamics
@@ -46,7 +46,6 @@ rho_vy0_lvlh = rand()*np.sqrt(velocity_rel_target**2 - rho_vx0_lvlh**2)
 rho_vz0_lvlh = np.sqrt(velocity_rel_target**2 - rho_vx0_lvlh**2 - rho_vy0_lvlh**2)
 
 p_trans.μ0 = np.asarray([rho_x0_lvlh, rho_y0_lvlh, rho_z0_lvlh, rho_vx0_lvlh, rho_vy0_lvlh, rho_vz0_lvlh])
-
 p_trans.get_chaser_nonlin_traj()
 
 # Setting final conditions of the ocp
@@ -70,14 +69,35 @@ plot_chaser_traj_lvlh(p_trans.chaser_nonlin_traj)
 plt.show()
 
 plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,:3])*p_trans.LU*1e3 for i in range(l_opt.shape[0])])
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\vec{l_{pos}}$|| [m]')
+plt.title('Norm of the position part of the slack variable')
 plt.show()
 
-plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,:3])
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,3:6])*p_trans.LU*1e3/p_trans.TU for i in range(l_opt.shape[0])])
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\vec{l_{vel}}$|| [m/s]')
+plt.title('Norm of the velocity part of the slack variable')
+plt.show()
+
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,0]*p_trans.LU/(p_trans.TU**2), label='X component',linewidth=1)
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,1]*p_trans.LU/(p_trans.TU**2), label='Y component',linewidth=1)
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,2]*p_trans.LU/(p_trans.TU**2), label='Z component',linewidth=1)
+plt.legend()
+plt.xlabel('Time [hours]')
+plt.ylabel(r'Components of the control input [m/$s^2$]')
+plt.title('Control inputs over time')
 plt.show()
 
 error_pos, error_vel = analysis(p_trans.chaser_nonlin_traj,chaser_traj,p_trans.n_time)
 plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_pos*p_trans.LU*1e3)
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\rho - \hat{\rho}$|| [m]')
+plt.title('Norm of the difference on the relative position of the chaser spacecraft in the lvlh frame')
 plt.show()
 
-plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_vel*p_trans.LU*1e3/p_trans.TU)
+plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_vel*p_trans.LU*1e3/p_trans.TU, linewidth=1)
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\dot{\rho} - \dot{\hat{\rho}}$|| [m/s]')
+plt.title('Norm of the difference on the relative velocity of the chaser spacecraft in the lvlh frame')
 plt.show()
