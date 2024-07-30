@@ -20,7 +20,8 @@ def linearize_translation(mu, traj, time, control):
                     
         if i < n_time-1:
             delta_t = time[i+1] - time[i] # if equally spaced time steps, this is the same as dt
-            stm[i] = get_phi(delta_t,linearized_trans(mu, traj[i,:]))
+            A = linearized_trans(mu, traj[i,:])
+            stm[i] = get_phi(delta_t, A)
             
             if control:
                 cim[i] = np.concatenate((np.zeros((3,3)),np.eye(3)),axis=0) # constant in my implementation

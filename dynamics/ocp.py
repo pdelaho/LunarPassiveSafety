@@ -1,4 +1,5 @@
 import cvxpy as cp
+import numpy as np
 
 def ocp_cvx(prob):
     """
@@ -27,6 +28,7 @@ def ocp_cvx(prob):
     con += [s[0] == s_0]
     con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
     con += [s[-1] == s_f]
+    # con += [a[i] == np.zeros(3) for i in range(n_time-1)]  # no control 
 
     
     if prob.nu == 3:

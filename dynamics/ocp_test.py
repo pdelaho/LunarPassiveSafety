@@ -37,7 +37,7 @@ prob = OCP(mats)
 
 # boundary condition (in km, and non-dimensionalized by LU)
 # LVLH [i,j,k] = [T, -N, -R]
-prob.μ0 = np.array([0,10,0,0,0,0])  / LU 
+prob.μ0 = np.array([0,0,1,0,0,1])  / LU 
 prob.μf = np.array([0,0,0,0,0,0])  / LU
 prob.n_time = 200 #len(t)
 
