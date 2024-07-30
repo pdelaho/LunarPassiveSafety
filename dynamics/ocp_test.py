@@ -37,7 +37,7 @@ prob = OCP(mats)
 
 # boundary condition (in km, and non-dimensionalized by LU)
 # LVLH [i,j,k] = [T, -N, -R]
-prob.μ0 = np.array([0,0,1,0,0,1])  / LU 
+prob.μ0 = np.array([0,10,0,0,0,0])  / LU 
 prob.μf = np.array([0,0,0,0,0,0])  / LU
 prob.n_time = 200 #len(t)
 
@@ -51,7 +51,7 @@ fig = plt.figure(figsize=(10,8))
 ax  = fig.add_subplot(111, projection='3d') 
 ax.plot3D(traj[:,0] , traj[:,1], traj[:,2], 'k') 
 ax.scatter3D(traj[0,0] , traj[0,1], traj[0,2], c='r', s=100, label='start')  # initial state is apoapsis
-ax.scatter3D(1-mu,0,0, c='orange', s=100, label='Moon')
+ax.scatter3D(0,0,0, c='orange', s=100, label='Moon')
 ax.axis('equal')
 ax.set_xlabel('x, LU')
 ax.set_ylabel('y, LU') 

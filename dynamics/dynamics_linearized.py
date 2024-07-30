@@ -21,6 +21,7 @@ def linearize_translation(mu, traj, time, control):
         if i < n_time-1:
             delta_t = time[i+1] - time[i] # if equally spaced time steps, this is the same as dt
             A = linearized_trans(mu, traj[i,:])
+            # print(np.round(A,4))
             stm[i] = get_phi(delta_t, A)
             
             if control:
