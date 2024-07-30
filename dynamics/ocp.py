@@ -12,6 +12,7 @@ def ocp_cvx(prob):
     A, B     = prob.stm, prob.cim # generalized dynamics 
     s_0, s_f = prob.μ0, prob.μf
     n_time   = prob.n_time    
+    dt       = prob.dt
 
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
@@ -27,10 +28,17 @@ def ocp_cvx(prob):
     cost = 0 
     con += [s[0] == s_0]
     con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
-    
+
     # if prob.control:
     con += [s[-1] == s_f]
     # con += [a[i] == np.zeros(3) for i in range(n_time-1)]  # no control 
+
+    if prob.con_list["wyp"]:
+        assert len(prob.wyp_t) == len(prob.wyp), "Number of waypoints and time do not match"
+        
+        for i in range(len(prob.wyp_t)):
+            idx = int(prob.wyp_t[i] / dt) 
+            con += [s[idx] == prob.wyp[i]]
 
     
     if prob.nu == 3:
@@ -42,7 +50,7 @@ def ocp_cvx(prob):
     cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e3   # slack variable penalty 
     
     p = cp.Problem(cp.Minimize(cost), con)
-    p.solve(solver=cp.MOSEK, verbose=False)
+    p.solve(solver=cp.Clarabel, verbose=False)
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    
