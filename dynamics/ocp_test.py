@@ -17,7 +17,7 @@ t, traj, mu, LU, TU = load_traj_data(fname)
 print("traj loaded...")
 print(f"mu: {mu} km^3/s^2")   
 print(f"LU: {LU} km")
-print(f"TU: {TU} s")  
+print(f"TU: {TU} s")
 
 mats = linearize_translation(mu, traj, t, True)
 

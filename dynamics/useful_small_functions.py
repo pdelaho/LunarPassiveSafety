@@ -27,7 +27,13 @@ def get_phi(t, A, p=5):
         phi += np.linalg.matrix_power(A*t, i) / np.math.factorial(i)
     return phi
 
+def bary_to_synodic(bary_traj, mu):
+    R = np.matrix([[-1, 0, 0],[0, -1, 0],[0, 0, 1]]) # Rotation matrix to go from the bary to the synodic frame
+    
+    syn_pos = R @ (bary_traj[:3].reshape((3,1)) - np.asarray([1-mu, 0, 0]).reshape((3,1)))
+    syn_vel = R @ bary_traj[3:6].reshape((3,1))
 
+    return np.concatenate(([syn_pos[i,0] for i in range(3)], [syn_vel[j,0] for j in range(3)]))
 
 def load_traj_data(fname):
     """
@@ -38,9 +44,29 @@ def load_traj_data(fname):
         data_dict = json.load(json_file)
         
     t     = np.array(data_dict['t'])
-    state = np.array(data_dict['state'])
+    state = np.array(data_dict['state']) # in the barycenter frame
     mu    = data_dict['mu']
     LU    = data_dict['LU']
-    TU    = data_dict['TU']  
-    
+    TU    = data_dict['TU']
+    print(state[:10,:])
+    state_syn = np.empty_like(state)
+    for i in range(state.shape[0]):
+        state_syn[i] = bary_to_synodic(state[i],mu)
+    print(state_syn[:10,:])
+    return t, state_syn, mu, LU, TU
+
+def load_traj_data_old(fname):
+    """
+    Load trajectory data from a json file.
+    """
+
+    with open(fname, 'r') as json_file:
+        data_dict = json.load(json_file)
+        
+    t     = np.array(data_dict['t'])
+    state = np.array(data_dict['state']) # in the barycenter frame
+    mu    = data_dict['mu']
+    LU    = data_dict['LU']
+    TU    = data_dict['TU']
+   
     return t, state, mu, LU, TU
