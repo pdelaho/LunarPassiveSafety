@@ -48,11 +48,11 @@ def load_traj_data(fname):
     mu    = data_dict['mu']
     LU    = data_dict['LU']
     TU    = data_dict['TU']
-    print(state[:10,:])
+
     state_syn = np.empty_like(state)
     for i in range(state.shape[0]):
         state_syn[i] = bary_to_synodic(state[i],mu)
-    print(state_syn[:10,:])
+
     return t, state_syn, mu, LU, TU
 
 def load_traj_data_old(fname):

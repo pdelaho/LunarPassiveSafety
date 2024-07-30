@@ -56,78 +56,73 @@ p_trans.μ0 = np.asarray([rho_x0_lvlh, rho_y0_lvlh, rho_z0_lvlh, rho_vx0_lvlh, r
 p_trans.get_chaser_nonlin_traj()
 
 # Setting final conditions of the ocp if control is True
-# p_trans.μf = np.asarray([0,0,0,0,0,0])
+p_trans.μf = np.asarray([0,0,0,0,0,0])
 
-# sol = ocp_cvx(p_trans)
-# chaser_traj = sol["mu"]
-# l_opt = sol["l"]
-# a_opt = sol["v"]
+sol = ocp_cvx(p_trans)
+chaser_traj = sol["mu"]
+l_opt = sol["l"]
+a_opt = sol["v"]
 
 # Plotting the orbit of the target
-# plot_target_traj_syn(p_trans.target_traj, L2x, p_trans.mu)
-# plt.show()
+plot_target_traj_syn(p_trans.target_traj, L2x, p_trans.mu)
+plt.show()
 
-# # Plotting the trajectory of the chaser (result of optimization)
-# plot_chaser_traj_lvlh(chaser_traj)
-# plt.show()
+# Plotting the trajectory of the chaser (result of optimization)
+plot_chaser_traj_lvlh(chaser_traj,p_trans.LU)
+plt.show()
 
-# # Plotting the trajectory of th chaser (propagation using non-linear dynamics)
-# plot_chaser_traj_lvlh(p_trans.chaser_nonlin_traj)
-# plt.show()
+# Plotting the trajectory of th chaser (propagation using non-linear dynamics)
+plot_chaser_traj_lvlh(p_trans.chaser_nonlin_traj,p_trans.LU)
+plt.show()
 
-# plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,:3])*p_trans.LU*1e3 for i in range(l_opt.shape[0])])
-# plt.xlabel('Time [hours]')
-# plt.ylabel(r'||$\vec{l_{pos}}$|| [m]')
-# plt.title('Norm of the position part of the slack variable')
-# plt.show()
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,:3])*p_trans.LU*1e3 for i in range(l_opt.shape[0])])
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\vec{l_{pos}}$|| [m]')
+plt.title('Norm of the position part of the slack variable')
+plt.show()
 
-# plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,3:6])*p_trans.LU*1e3/p_trans.TU for i in range(l_opt.shape[0])])
-# plt.xlabel('Time [hours]')
-# plt.ylabel(r'||$\vec{l_{vel}}$|| [m/s]')
-# plt.title('Norm of the velocity part of the slack variable')
-# plt.show()
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,[np.linalg.norm(l_opt[i,3:6])*p_trans.LU*1e3/p_trans.TU for i in range(l_opt.shape[0])])
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\vec{l_{vel}}$|| [m/s]')
+plt.title('Norm of the velocity part of the slack variable')
+plt.show()
 
-# plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,0]*p_trans.LU/(p_trans.TU**2), label='X component',linewidth=1)
-# plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,1]*p_trans.LU/(p_trans.TU**2), label='Y component',linewidth=1)
-# plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,2]*p_trans.LU/(p_trans.TU**2), label='Z component',linewidth=1)
-# plt.legend()
-# plt.xlabel('Time [hours]')
-# plt.ylabel(r'Components of the control input [m/$s^2$]')
-# plt.title('Control inputs over time')
-# plt.show()
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,0]*p_trans.LU/(p_trans.TU**2), label='X component',linewidth=1)
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,1]*p_trans.LU/(p_trans.TU**2), label='Y component',linewidth=1)
+plt.plot(p_trans.time_hrz[1:]*p_trans.TU/3600,a_opt[:,2]*p_trans.LU/(p_trans.TU**2), label='Z component',linewidth=1)
+plt.legend()
+plt.xlabel('Time [hours]')
+plt.ylabel(r'Components of the control input [m/$s^2$]')
+plt.title('Control inputs over time')
+plt.show()
 
-# error_pos, error_vel = analysis(p_trans.chaser_nonlin_traj,chaser_traj,p_trans.n_time)
-# plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_pos*p_trans.LU*1e3)
-# plt.xlabel('Time [hours]')
-# plt.ylabel(r'||$\rho - \hat{\rho}$|| [m]')
-# plt.title('Norm of the difference on the relative position of the chaser spacecraft in the lvlh frame')
-# plt.show()
+error_pos, error_vel = analysis(p_trans.chaser_nonlin_traj,chaser_traj,p_trans.n_time)
+plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_pos*p_trans.LU*1e3)
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\rho - \hat{\rho}$|| [m]')
+plt.title('Norm of the difference on the relative position of the chaser spacecraft in the lvlh frame')
+plt.show()
 
-# plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_vel*p_trans.LU*1e3/p_trans.TU, linewidth=1)
-# plt.xlabel('Time [hours]')
-# plt.ylabel(r'||$\dot{\rho} - \dot{\hat{\rho}}$|| [m/s]')
-# plt.title('Norm of the difference on the relative velocity of the chaser spacecraft in the lvlh frame')
-# plt.show()
+plt.plot(p_trans.time_hrz*p_trans.TU/3600,error_vel*p_trans.LU*1e3/p_trans.TU, linewidth=1)
+plt.xlabel('Time [hours]')
+plt.ylabel(r'||$\dot{\rho} - \dot{\hat{\rho}}$|| [m/s]')
+plt.title('Norm of the difference on the relative velocity of the chaser spacecraft in the lvlh frame')
+plt.show()
 
+
+
+## Test of the natural (nonlinear) dynamics in the context of R/T/N separation (to verify our intuition)
 root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_folder)
-
 fname = root_folder + "/dynamics/data/9_2_S_Halo.json"
 t, target_traj, mu, LU, TU = load_traj_data(fname) # loading the trajectory for the target's spacecraft
-t, traj, mu, LU, TU = load_traj_data_old(fname) # loading the trajectory for the target's spacecraft
 
 # LVLH [i,j,k] = [T, -N, -R]
 init_cond_lvlh = np.asarray([10,0,0,0,0,0])/LU # to adimensionalize the distances (but not velocities!)
-
-# target_traj = np.empty_like(traj)
-# for i in range(traj.shape[0]):
-#     target_traj[i] = bary_to_synodic(traj[i],mu)
-
 init_cond_syn = lvlh_to_synodic(init_cond_lvlh,target_traj[0],p_trans.mu)
 
 chaser_traj_syn = odeint(dynamics_synodic,init_cond_syn,t[:200],args=(p_trans.mu,))
 trajectories = odeint(propagator_relative,np.concatenate((target_traj[0],init_cond_lvlh)),t[:200],args=(p_trans.mu,))
-
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
@@ -142,20 +137,19 @@ ax.set_zlabel('Z [nd]')
 ax.legend()
 plt.title("Target's orbit in the synodic frame")
 plt.grid()
-plt.show()
+# plt.show()
 
-# Getting everything back to the LVLH frame
 chaser_traj_lvlh = np.empty_like(chaser_traj_syn)
 for i in range(chaser_traj_lvlh.shape[0]):
     chaser_traj_lvlh[i] = synodic_to_lvlh(chaser_traj_syn[i],target_traj[i],p_trans.mu)
 
 plot_chaser_traj_lvlh(chaser_traj_lvlh,LU)
 plot_chaser_traj_lvlh(trajectories[:,6:12],LU)
-plt.show()
+# plt.show()
 
 norm_error = np.empty_like(chaser_traj_lvlh[:,0])
 for i in range(chaser_traj_lvlh.shape[0]):
     norm_error[i] = np.linalg.norm(chaser_traj_lvlh[i,:3] - trajectories[i,6:9])
     
 plt.plot(t[:200]*TU/3600,norm_error*LU*1e3)
-plt.show()
+# plt.show()
