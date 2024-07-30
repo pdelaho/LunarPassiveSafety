@@ -50,7 +50,7 @@ def ocp_cvx(prob):
     cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e3   # slack variable penalty 
     
     p = cp.Problem(cp.Minimize(cost), con)
-    p.solve(solver=cp.Clarabel, verbose=False)
+    p.solve(solver=cp.CLARABEL, verbose=False)
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    
