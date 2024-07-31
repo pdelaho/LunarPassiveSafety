@@ -4,7 +4,7 @@ import heapq
 # Do we want to use a given time period for passive safety or a number of time steps?
 # Not a big change, just need to be consistent
 
-def passive_safe_ellipsoid(prob, N, inv_Pf):
+def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
     """
         N-step Passive safety ellipoid generation. 
         return the coefficient matrix K for the passive safety ellisoid.
@@ -24,7 +24,7 @@ def passive_safe_ellipsoid(prob, N, inv_Pf):
 
     for j in range(N):
         
-        Phi = prob.stm[j,:,:]
+        Phi = prob.stm[final_time_step-j-1,:,:]
         inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
       
     return inv_PP

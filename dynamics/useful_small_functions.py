@@ -70,3 +70,17 @@ def load_traj_data_old(fname):
     TU    = data_dict['TU']
    
     return t, state, mu, LU, TU
+
+def generate_outside_ellipsoid(inv_P, center):
+    x = np.random.randn(6)*1e-4
+    if (x-center) @ inv_P @ (x-center).T <=1:
+        generate_outside_ellipsoid(inv_P, center)
+    else:
+        return x
+    
+def generate_inside_ellipsoid(inv_P, center):
+    x = np.random.randn(6)*1e-5 # try 1e-5 if this doesn't work
+    if (x-center) @ inv_P @ (x-center).T <= 1:
+        return x
+    else:
+        generate_inside_ellipsoid(inv_P, center)

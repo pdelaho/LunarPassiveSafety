@@ -59,3 +59,9 @@ class CR3BP_RPOD_OCP:
         # For now the final condition is given by propagating the non-linear dynamics in the synodic frame but conditiond are given
         # in the LVLH frame
         self.chaser_nonlin_traj = get_chaser_nonlin_traj(self.μ0, self.target_traj, self.time_hrz, self.mu)
+        
+    def load_traj_data(self, fname):
+        # Getting the reference trajectory for the target spacecraft from a json file
+        time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
+        self.time_hrz = time[:self.n_time]
+        self.target_traj = traj[:self.n_time]

@@ -7,6 +7,7 @@ def plot_target_traj_syn(target_traj, L_point, mu):
     ax.plot(target_traj[:,0], target_traj[:,1], target_traj[:,2], color='r', label="Target's orbit")
     ax.scatter(0, 0, 0, label='Moon')
     ax.scatter(L_point-(1-mu), 0, 0, label='L2')
+    ax.scatter(target_traj[0,0],target_traj[0,1], target_traj[0,2], label='Start')
     ax.axis('equal')
     ax.set_xlabel('X [nd]')
     ax.set_ylabel('Y [nd]')
@@ -66,7 +67,7 @@ def plot_ellipse_2D(P_inv, ax):
     # Plot
     ax.plot(rotated_ellipse[0, :], rotated_ellipse[1, :])
     
-def plot_ellipse_3D(P_inv,ax):
+def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
     center = [0,0,0]
 
     # find the rotation matrix and radii of the axes
@@ -76,15 +77,26 @@ def plot_ellipse_3D(P_inv,ax):
     # now carry on with EOL's answer
     u = np.linspace(0.0, 2.0 * np.pi, 100)
     v = np.linspace(0.0, np.pi, 100)
-    x = radii[0] * np.outer(np.cos(u), np.sin(v))
-    y = radii[1] * np.outer(np.sin(u), np.sin(v))
-    z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
+    if type == 'pos':
+        x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU
+        y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU
+        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU
+        ax.set_xlabel('T [km]')
+        ax.set_ylabel('N [km]')
+        ax.set_zlabel('R [km]')
+    if type == 'vel':
+        x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU/TU
+        y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU/TU
+        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU/TU
+        ax.set_xlabel('T [km/s]')
+        ax.set_ylabel('N [km/s]')
+        ax.set_zlabel('R [km/s]')
+    
     for i in range(len(x)):
         for j in range(len(x)):
             [x[i,j],y[i,j],z[i,j]] = np.dot([x[i,j],y[i,j],z[i,j]], rotation) + center
 
-    # plot
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax = fig.add_subplot(111, projection='3d')
-    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.2) # color = 'b'
+    # ax.set_xlabel('T [km]')
+    # ax.set_ylabel('N [km]')
+    # ax.set_zlabel('R [km]')
+    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.2, label = label, color = color) # color = 'b'

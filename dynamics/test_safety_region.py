@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.random import rand
 import random
+import sys
+import os
 
 from problem_class import *
 from ocp import *
@@ -10,73 +12,93 @@ from safe_set import *
 
 L2x = 1.15568217 # nd, position of the L2 point
 
-x0_bary = 9.2280005557282274E-1 # nd, initial conditions from Franzini's article
-y0_bary = 1.6386233489716853E-28 # nd
-z0_bary = -2.1575768509057866E-1 # nd
-vx0_bary = 4.4327633188679963E-13 # nd
-vy0_bary = 	1.2826547451754347E-1 # nd
-vz0_bary = 2.4299327620081873E-12 # nd
-T = 1.8036720655626510E+0 # nd
-initial_conditions_bary = np.asarray([x0_bary, y0_bary, z0_bary, vx0_bary, vy0_bary, vz0_bary])
-initial_conditions_synodic = bary_to_synodic(initial_conditions_bary, mu=1.215e-2)
+root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(root_folder)
+fname = root_folder + "/dynamics/data/9_2_S_Halo.json"
+t, target_traj, mu, LU, TU = load_traj_data(fname)
 
-p_trans = CR3BP_RPOD_OCP(
-    period=T, initial_conditions_target=initial_conditions_synodic, iter_max=15,
-    mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
-    n_time=1000,nx=6,nu=3,M0=180,tf=0.07,mu0=None,muf=None,control=True
-)
 
-# Set-up of the dynamics
-p_trans.get_traj_ref(p_trans.n_time)
-p_trans.linearize_trans()
-
-# Define the initial conditions for the chaser spacecraft
-# For now initial conditions are random
-# distance_to_target_km = 10 # km
-# distance_to_target = distance_to_target_km/p_trans.LU # nd
-
-# rho_x0_lvlh = rand()*distance_to_target*random.choice([1,-1])
-# rho_y0_lvlh = rand()*np.sqrt(distance_to_target**2 - rho_x0_lvlh**2)*random.choice([1,-1])
-# rho_z0_lvlh = np.sqrt(distance_to_target**2 - rho_x0_lvlh**2 - rho_y0_lvlh**2)*random.choice([1,-1])
-
-# velocity_rel_target_km = 0 # km/s
-# velocity_rel_target = velocity_rel_target_km/p_trans.LU*p_trans.TU # nd
-
-# rho_vx0_lvlh = rand()*velocity_rel_target
-# rho_vy0_lvlh = rand()*np.sqrt(velocity_rel_target**2 - rho_vx0_lvlh**2)
-# rho_vz0_lvlh = np.sqrt(velocity_rel_target**2 - rho_vx0_lvlh**2 - rho_vy0_lvlh**2)
-
-# p_trans.μ0 = np.asarray([rho_x0_lvlh, rho_y0_lvlh, rho_z0_lvlh, rho_vx0_lvlh, rho_vy0_lvlh, rho_vz0_lvlh])
-# p_trans.get_chaser_nonlin_traj()
-
-# # Setting final conditions of the ocp
-# p_trans.μf = p_trans.chaser_nonlin_traj[-1,:]
-
-# sol = ocp_cvx(p_trans)
-# chaser_traj = sol["mu"]
-# l_opt = sol["l"]
-# a_opt = sol["v"]
+## Tests for the BRS using ellipsoids as the KOZ
 
 # Defining the unsafe ellipsoid (6D, 3D for position and 3D for velocity)
 rx = 10 # km
-rx_ad = 10/p_trans.LU
-Pf = np.diag([rx_ad**2, rx_ad**2, rx_ad**2, 1, 1, 1])
+rx_ad = 10/LU
+rv = 0.1 # km/s
+rv_ad = rv/LU*TU
+# volume_tot = 1/np.sqrt(np.pi*6) * (2*np.pi*math.e/6)**(3) * rx_ad**3 * rv_ad**3
+# print(volume_tot)
+Pf = np.diag([rx_ad**2, rx_ad**2, rx_ad**2, rv_ad**2, rv_ad**2, rv_ad**2])
 inv_Pf = np.linalg.inv(Pf)
 
-N = 999
-inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf)
-print(inv_PP)
+# Defining the final time step at which the chaser should be oustide the KOZ
+final_time_step = 1000
 
+# N = 100
+# inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf) # computing the unsafe ellipsoids
+# eig_values, _ = np.linalg.eig(inv_PP[0])
+# volume_tot = 1/np.sqrt(np.pi*6) * (2*np.pi*math.e/6)**(3) * eig_values[0] * eig_values[1] * eig_values[2] * eig_values[3] * eig_values[4] * eig_values[5]
+# print(volume_tot)
+# print(np.trace((inv_PP[1,:3,:3]-inv_PP[0,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[0,:3,:3]).T), np.trace((inv_PP[1,:3,:3]-inv_PP[2,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[2,:3,:3]).T), np.trace((inv_PP[1,:3,:3]-inv_PP[-1,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[-1,:3,:3]).T))
 
-# fig, ax = plt.subplots()
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU)
 
 # Change the plotting function of the ellipsoid to plot in 3D and not 2D
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
 # for k in range(N):
-plot_ellipse_3D(inv_PP[0,0:3,0:3], ax)
+# plot_ellipse_3D(inv_PP[0,0:3,0:3], ax, LU)
+
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# plot_ellipse_3D(inv_PP[-1,3:6,3:6], ax, LU)
+
+plt.show()
+
+p_trans2 = CR3BP_RPOD_OCP(
+    period=t[-1], initial_conditions_target=target_traj[0], iter_max=15,
+    mu=mu,LU=LU,mean_motion=2.661699e-6,
+    n_time=final_time_step+1,nx=6,nu=3,M0=180,tf=0.5,mu0=None,muf=None,control=False
+)
+p_trans2.load_traj_data(fname)
+p_trans2.linearize_trans()
+
+N = final_time_step
+inv_PP = passive_safe_ellipsoid(p_trans2, N, inv_Pf, final_time_step) # computing the unsafe ellipsoids
+
+# Generating a random vector outside the unsafe ellipsoid
+x_out = generate_outside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
+print(x_out, x_out @ inv_PP[-1] @ x_out.T)
+
+x_in = generate_inside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
+print(x_in, x_in @ inv_PP[-1] @ x_in.T)
+
+p_trans2.μ0 = x_out
+# p_trans2.μ0 = x_in
+
+p_trans2.get_chaser_nonlin_traj()
+
+sol2 = ocp_cvx(p_trans2)
+chaser_traj = sol2["mu"]
+l_opt = sol2["l"]
+a_opt = sol2["v"]
+
+fig = plt.figure()
+plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,a_opt[:final_time_step,0]*LU/(TU**2), label='T',linewidth=1)
+plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,-a_opt[:final_time_step,1]*LU/(TU**2), label='N',linewidth=1)
+plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,-a_opt[:final_time_step,2]*LU/(TU**2), label='R',linewidth=1)
+plt.legend()
+plt.xlabel('Time [hours]')
+plt.ylabel(r'Components of the control input [m/$s^2$]')
+plt.title('Control inputs over time')
+plt.show()
+
+print(chaser_traj[final_time_step] @ inv_PP[-1] @ chaser_traj[final_time_step].T)
+print(p_trans2.chaser_nonlin_traj[final_time_step] @ inv_PP[-1] @ p_trans2.chaser_nonlin_traj[final_time_step].T)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-plot_ellipse_3D(inv_PP[-1,0:3,0:3], ax)
+plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU, TU, 'Final KOZ', 'b', 'vel')
+plot_ellipse_3D(inv_PP[-1,3:6,3:6], ax, LU, TU, 'Initial unsafe ellipsoid', 'r', 'vel')
 plt.show()
