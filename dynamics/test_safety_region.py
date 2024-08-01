@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.random import rand
-import random
 import sys
 import os
 
@@ -18,87 +16,156 @@ fname = root_folder + "/dynamics/data/9_2_S_Halo.json"
 t, target_traj, mu, LU, TU = load_traj_data(fname)
 
 
-## Tests for the BRS using ellipsoids as the KOZ
-
+## Tests for the part where we compute the unsafe ellipsoids
 # Defining the unsafe ellipsoid (6D, 3D for position and 3D for velocity)
 rx = 10 # km
-rx_ad = 10/LU
-rv = 0.1 # km/s
+rx_ad = rx/LU
+rv = 0.001 # km/s
 rv_ad = rv/LU*TU
-# volume_tot = 1/np.sqrt(np.pi*6) * (2*np.pi*math.e/6)**(3) * rx_ad**3 * rv_ad**3
-# print(volume_tot)
+
 Pf = np.diag([rx_ad**2, rx_ad**2, rx_ad**2, rv_ad**2, rv_ad**2, rv_ad**2])
 inv_Pf = np.linalg.inv(Pf)
 
 # Defining the final time step at which the chaser should be oustide the KOZ
 final_time_step = 1000
 
-# N = 100
-# inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf) # computing the unsafe ellipsoids
-# eig_values, _ = np.linalg.eig(inv_PP[0])
-# volume_tot = 1/np.sqrt(np.pi*6) * (2*np.pi*math.e/6)**(3) * eig_values[0] * eig_values[1] * eig_values[2] * eig_values[3] * eig_values[4] * eig_values[5]
-# print(volume_tot)
-# print(np.trace((inv_PP[1,:3,:3]-inv_PP[0,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[0,:3,:3]).T), np.trace((inv_PP[1,:3,:3]-inv_PP[2,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[2,:3,:3]).T), np.trace((inv_PP[1,:3,:3]-inv_PP[-1,:3,:3]) @ (inv_PP[1,:3,:3]-inv_PP[-1,:3,:3]).T))
-
-# fig = plt.figure()
-# ax = fig.add_subplot(projection='3d')
-# plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU)
-
-# Change the plotting function of the ellipsoid to plot in 3D and not 2D
-# fig = plt.figure()
-# ax = fig.add_subplot(projection='3d')
-# for k in range(N):
-# plot_ellipse_3D(inv_PP[0,0:3,0:3], ax, LU)
-
-# fig = plt.figure()
-# ax = fig.add_subplot(projection='3d')
-# plot_ellipse_3D(inv_PP[-1,3:6,3:6], ax, LU)
-
-plt.show()
-
-p_trans2 = CR3BP_RPOD_OCP(
+p_trans = CR3BP_RPOD_OCP(
     period=t[-1], initial_conditions_target=target_traj[0], iter_max=15,
     mu=mu,LU=LU,mean_motion=2.661699e-6,
     n_time=final_time_step+1,nx=6,nu=3,M0=180,tf=0.5,mu0=None,muf=None,control=False
 )
-p_trans2.load_traj_data(fname)
-p_trans2.linearize_trans()
+
+p_trans.load_traj_data(fname)
+p_trans.linearize_trans()
 
 N = final_time_step
-inv_PP = passive_safe_ellipsoid(p_trans2, N, inv_Pf, final_time_step) # computing the unsafe ellipsoids
+inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf, final_time_step) # computing the unsafe ellipsoids
 
-# Generating a random vector outside the unsafe ellipsoid
-x_out = generate_outside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
-print(x_out, x_out @ inv_PP[-1] @ x_out.T)
+print(volume_ellipsoid(inv_Pf, LU, TU),volume_ellipsoid(inv_PP[-1], LU, TU))
 
-x_in = generate_inside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
-print(x_in, x_in @ inv_PP[-1] @ x_in.T)
+# x_out = generate_outside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0])) # Generating a random vector outside the unsafe ellipsoid
+x_out = np.asarray([1*1e-5,0,3*1e-5,0,0,0])
 
-p_trans2.μ0 = x_out
-# p_trans2.μ0 = x_in
-
-p_trans2.get_chaser_nonlin_traj()
-
-sol2 = ocp_cvx(p_trans2)
-chaser_traj = sol2["mu"]
-l_opt = sol2["l"]
-a_opt = sol2["v"]
+print(x_out, x_out @ inv_PP[-1] @ x_out.T, np.linalg.norm(x_out)*LU)
 
 fig = plt.figure()
-plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,a_opt[:final_time_step,0]*LU/(TU**2), label='T',linewidth=1)
-plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,-a_opt[:final_time_step,1]*LU/(TU**2), label='N',linewidth=1)
-plt.plot(p_trans2.time_hrz[1:final_time_step+1]*TU/3600,-a_opt[:final_time_step,2]*LU/(TU**2), label='R',linewidth=1)
+ax = fig.add_subplot(projection='3d')
+plot_ellipse_3D(inv_Pf[:3,:3], ax, LU, TU, 'Final KOZ', 'b', 'pos')
+plot_ellipse_3D(inv_PP[-1,:3,:3], ax, LU, TU, 'Initial unsafe ellipsoid', 'r', 'pos')
+ax.scatter(x_out[0],x_out[1],x_out[2], label='Start', color='k')
 plt.legend()
-plt.xlabel('Time [hours]')
-plt.ylabel(r'Components of the control input [m/$s^2$]')
-plt.title('Control inputs over time')
-plt.show()
-
-print(chaser_traj[final_time_step] @ inv_PP[-1] @ chaser_traj[final_time_step].T)
-print(p_trans2.chaser_nonlin_traj[final_time_step] @ inv_PP[-1] @ p_trans2.chaser_nonlin_traj[final_time_step].T)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU, TU, 'Final KOZ', 'b', 'vel')
 plot_ellipse_3D(inv_PP[-1,3:6,3:6], ax, LU, TU, 'Initial unsafe ellipsoid', 'r', 'vel')
+ax.scatter(x_out[3],x_out[4],x_out[5], label='Start', color='k')
+plt.legend()
+
+# x_in = generate_inside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
+# print(x_in, x_in @ inv_PP[-1] @ x_in.T)
+
+p_trans.μ0 = x_out
+# p_trans2.μ0 = x_in
+
+p_trans.get_chaser_nonlin_traj()
+
+sol2 = ocp_cvx(p_trans)
+chaser_traj = sol2["mu"]
+l_opt = sol2["l"]
+a_opt = sol2["v"]
+
+print(chaser_traj[final_time_step] @ inv_PP[-1] @ chaser_traj[final_time_step].T)
+print(p_trans.chaser_nonlin_traj[final_time_step] @ inv_PP[-1] @ p_trans.chaser_nonlin_traj[final_time_step].T)
+
+closest_ellipsoids, indices = extract_closest_ellipsoid(x_out, inv_PP, 1)
+closest_ellipsoids = np.asarray(closest_ellipsoids)
+print(indices)
+
+h = convexify_safety_constraint(x_out, closest_ellipsoids, 1)
+print(h)
+
+# create x,y
+xx, yy = np.meshgrid(range(-5,6), range(-5,6))
+xx = np.asarray(xx)*1e-5
+yy = np.asarray(yy)*1e-5
+
+# calculate corresponding z
+z = (-h[0] * xx - h[1] * yy + 1) * 1. /h[2]
+
+# plot the surface
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
+plot_ellipse_3D(inv_Pf[:3,:3], ax, LU, TU, 'Final KOZ', 'b', 'pos')
+plot_ellipse_3D(closest_ellipsoids[0,:3,:3], ax, LU, TU, 'Closest ellipsoid', 'r', 'pos')
+ax.scatter(x_out[0], x_out[1], x_out[2], c='k')
+ax.axis('equal')
+plt.legend()
+
+xx, yy = np.meshgrid(range(-5,6), range(-5,6))
+xx = np.asarray(xx)*1e-4
+yy = np.asarray(yy)*1e-4
+
+# calculate corresponding z
+z = (-h[3] * xx - h[4] * yy + 1) * 1. /h[5]
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+# ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
+plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU, TU, 'Final KOZ', 'b', 'vel')
+plot_ellipse_3D(closest_ellipsoids[0,3:6,3:6], ax, LU, TU, 'Closest ellipsoid', 'r', 'vel')
+ax.scatter(x_out[3], x_out[4], x_out[5], c='k')
+ax.axis('equal')
+plt.legend()
+
 plt.show()
+
+
+## Tests for the part where we extract the n closest ellipsoids given a state point
+
+# First trying with ellipsoids and points completely different from the ones we'll have in the RPOD scenario to check
+P = np.empty((2,3,3))
+P[0] = np.linalg.inv(np.diag([1**2, 2**2, 3**2]))
+P[1] = np.linalg.inv(np.diag([3**2, 1**2, 2**2]))
+
+x_test = np.asarray([1,2,3])
+
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# plot_ellipse_3D(P[0], ax, LU, TU, 'Ellipse 1', 'b', 'pos')
+# plot_ellipse_3D(P[1], ax, LU, TU, 'Ellipse 2', 'r', 'pos')
+
+# ax.scatter(x_test[0], x_test[1], x_test[2], c='k')
+# ax.axis('equal')
+# plt.legend()
+# plt.show()
+
+closest_ellipsoid, indices = extract_closest_ellipsoid(x_test, P, 1)
+# print(indices)
+
+# Seems like it works, NOW TRY WITH THE DATA FROM THE RPOD SCENARIO -> done before these tests
+
+
+## Tests for the part where we convexify (thanks to a hyperplane) the constraints of staying outside the unsafe ellipsoid
+
+# Keep using the previous example
+h = convexify_safety_constraint(x_test, closest_ellipsoid, 1)
+# print(h)
+
+# create x,y
+xx, yy = np.meshgrid(range(3), range(3))
+
+# calculate corresponding z
+z = (-h[0] * xx - h[1] * yy + 1) * 1. /h[2]
+
+# plot the surface
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
+# plot_ellipse_3D(P[0], ax, LU, TU, 'Ellipse 1', 'b', 'pos')
+# plot_ellipse_3D(P[1], ax, LU, TU, 'Ellipse 2', 'r', 'pos')
+# ax.scatter(x_test[0], x_test[1], x_test[2], c='k')
+# ax.axis('equal')
+# plt.legend()
+# plt.show()

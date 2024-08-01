@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import math
 
 def skew(a):
     """Compute the skew matrix associated to vector a
@@ -84,3 +85,19 @@ def generate_inside_ellipsoid(inv_P, center):
         return x
     else:
         generate_inside_ellipsoid(inv_P, center)
+        
+def volume_ellipsoid(shape_matrix, LU, TU, dim=6, type='pos'):
+    eigenvalues, _ = np.linalg.eig(shape_matrix)
+    prod = 1
+    for i in range(dim):
+        prod *= 1/np.sqrt(eigenvalues[i])
+        
+    if dim == 3:
+        if type == 'pos':
+            volume = 4/3 * np.pi * prod * LU**3
+        if type == 'vel':
+            volume = 4/3 * np.pi * prod * LU**3 / (TU**3)
+    if dim == 6:
+        volume = 1/(np.sqrt(np.pi*dim)) * (2*math.e*np.pi/dim)**(dim/2) * prod * LU**6 / (TU**3)
+    
+    return volume

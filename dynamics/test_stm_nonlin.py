@@ -6,8 +6,12 @@ from numpy.random import rand
 import matplotlib.pyplot as plt
 import csv
 import scipy as sc
+import os
+import sys
+import time
 
 from linear_dynamics_LVLH import propagator_absolute,M_to_LVLH,integrate_matrix,matrix_dynamics,propagator_relative
+from useful_small_functions import *
 
 r12 = 384400 # km, distance between primary attractors
 mu = 1.215e-2 # no unit, mass parameter of the system
@@ -16,7 +20,10 @@ L1x = 0.83691513 # nd, position of the L1 point along the x direction
 L2x = 1.15568217 # nd, position of the L2 point along the x direction
 
 # Getting the initial conditions from the file
-file = open("initial_conditions.csv","r")
+root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(root_folder)
+fname = root_folder + "/dynamics/data/initial_conditions.csv"
+file = open(fname,"r")
 reader = csv.reader(file)
 data = []
 for lines in reader:
@@ -27,7 +34,6 @@ file.close()
 data = np.asarray(data)
 period = data[0,-1]
 period = period.astype('float64')
-# print(period.dtype)
 initial_conditions_target_M = np.asarray(data[0,:6])
 initial_conditions_target_M = initial_conditions_target_M.astype('float64')
 initial_conditions_chaser_LVLH = np.asarray(data[0,6:12])
@@ -42,7 +48,6 @@ initial_conditions_murakami_M = np.asarray(data[3,:12])
 initial_conditions_murakami_M = initial_conditions_murakami_M.astype('float64')
 initial_conditions_murakami_LVLH = np.asarray(data[4,:12])
 initial_conditions_murakami_LVLH = initial_conditions_murakami_LVLH.astype('float64')
-# print(initial_conditions_target_M.dtype)
 
 # Setting the time for the simulation
 length = 12*3600/TU # nd for a 12-hour simulation
@@ -156,11 +161,22 @@ plt.show()
 chaser_trajectory_stm = np.zeros_like(y_orbit[:,:6])
 chaser_trajectory_stm[0] = (np.asarray(initial_conditions_chaser_LVLH)).reshape(6)
 # chaser_trajectory_stm[0] = (np.asarray(initial_conditions_murakami_LVLH[6:12])).reshape(6)
+timing_exp = np.zeros_like(y_orbit[:,0])
+timing_approx = np.zeros_like(y_orbit[:,0])
+norm_diff_matrix = np.zeros_like(y_orbit[:,0])
 for i in range(1,y_orbit.shape[0]):
     delta_t = t_simulation[i]-t_simulation[i-1] # jouer sur les indices MAIS EN FIXANT LES CONDITIONS INITIALES
+    start = time.perf_counter()
     phi = sc.linalg.expm(delta_t*matrix_dynamics(y_orbit[i,:],t_simulation[i],mu)) # jouer sur les indices
-    # phi = get_phi(delta_t,matrix_dynamics(y_orbit[i,:],t_simulation[i],mu)) # similar with get_phi and sc.linalg.expm
+    end = time.perf_counter()
+    timing_exp[i] = end-start
+    start2 = time.perf_counter()
+    phi2 = get_phi(delta_t,matrix_dynamics(y_orbit[i,:],t_simulation[i],mu),p=5) # similar with get_phi and sc.linalg.expm
+    end2 = time.perf_counter()
+    timing_approx[i] = end2 - start2
+    norm_diff_matrix[i] = np.trace((phi-phi2) @ ((phi-phi2).T)) # this is the norm squared but will work
     chaser_trajectory_stm[i] = (phi @ chaser_trajectory_stm[i-1].reshape((6,1))).reshape(6)
+    # chaser_trajectory_stm[i] = (phi2 @ chaser_trajectory_stm[i-1].reshape((6,1))).reshape(6)
 
 error_stm_lin_dist = np.zeros(y_orbit.shape[0])
 error_stm_lin_vel = np.zeros(y_orbit.shape[0])
@@ -181,22 +197,6 @@ plt.xlabel('Time [hours]')
 plt.ylabel(r"||$\dot{\rho}_{STM} - \dot{\rho}_{int}$|| [m/s]")
 plt.title('Error between integration of linear dynamics and multiplication by STM on relative velocity')
 plt.show()
-
-# when using murakami's data, why are the results so far away betwenn integration of the linear dynamics and propagation using the STM??
-# Because it's not what's written on the title of the plots, change it
-
-# Saving the target and chaser spacecrafts' trajectories in a csv file
-# file = open("target_chaser_trajectories.csv","w")
-# writer = csv.writer(file)
-# for l in range(len(y_orbit[:,0])):
-#     if l>0:
-#         # To save the target trajectory and the propagation of the chaser's trajectory with NON-LINEAR dynamics
-#         data = np.concatenate(([t_simulation[l]],y_orbit[l,:6],rho_LVLH_history_true[l,:],rho_dot_LVLH_history_true[l,:]))
-#     elif l == 0:
-#         # To save the target trajectory and the propagation of the chaser's trajectory with LINEAR dynamics
-#         data = np.concatenate(([t_simulation[l]],y_orbit[l,:6],rho_LVLH_history_true[l,:],rho_dot_LVLH_history_true[l,:]))
-#     writer.writerow(data)
-# file.close()
 
 # Sanity check that initial conditions matches when they should
 # print(rho_LVLH_history_true[0,:],rho_x0_LVLH,rho_y0_LVLH,rho_z0_LVLH)
@@ -222,4 +222,30 @@ plt.show()
 plt.plot(t_simulation*TU/3600,error_lin_nonlin_vel*r12*1e3/TU)
 plt.show()
 
-# Should compare the linear and multiplication by the STM again though
+plt.plot(t_simulation*TU/3600,chaser_trajectory_stm[:,:3]*r12*1e3)
+plt.xlabel('Time [hours]')
+plt.ylabel(r"$\hat{\rho}$ [m]")
+plt.title(r'$\rho$ given by multiplying with the STM')
+plt.show()
+
+plt.plot(t_simulation*TU/3600,chaser_trajectory_stm[:,3:6]*r12*1e3/TU)
+plt.xlabel('Time [hours]')
+plt.ylabel(r"$\hat{\dot{\rho}}$ [m/s]")
+plt.title(r'$\dot{\rho}$ given by multiplying with the STM')
+plt.show()
+
+plt.plot(t_simulation*TU/3600,timing_exp*1e3,label='using scipy')
+plt.plot(t_simulation*TU/3600,timing_approx*1e3,label='using approx')
+plt.plot(t_simulation*TU/3600,np.average(timing_exp)*np.ones_like(y_orbit[:,0])*1e3,label='mean using scipy')
+plt.plot(t_simulation*TU/3600,np.average(timing_approx)*np.ones_like(y_orbit[:,0])*1e3,label='mean using approx')
+plt.xlabel('Time [hours]')
+plt.ylabel(r"Computation time [ms]")
+plt.title('Computation time to get the STM with 2 different methods')
+plt.legend()
+plt.show()
+
+plt.plot(t_simulation*TU/3600,norm_diff_matrix)
+plt.xlabel('Time [hours]')
+plt.ylabel(r"Norm of the matrix difference between the STMs")
+plt.title('Comparison of the two ways of computing the STM')
+plt.show()

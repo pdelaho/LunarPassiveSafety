@@ -36,6 +36,7 @@ class CR3BP_RPOD_OCP:
         self.M0 = M0 
         self.tf_orbit = tf   # numer of orbits
         self.control = control
+        # self.ti = self.M0 * self.period / (2*np.pi)
         
         # boundary condition 
         self.μ0 = mu0 
@@ -63,5 +64,6 @@ class CR3BP_RPOD_OCP:
     def load_traj_data(self, fname):
         # Getting the reference trajectory for the target spacecraft from a json file
         time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
+        # ti_step = np.argmin([ abs(i-self.ti) for i in time])
         self.time_hrz = time[:self.n_time]
         self.target_traj = traj[:self.n_time]

@@ -27,8 +27,8 @@ def ocp_cvx(prob):
     con += [s[0] == s_0]
     con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
     
-    # if prob.control:
-    con += [s[-1] == s_f]
+    if prob.control:
+        con += [s[-1] == s_f]
 
     
     if prob.nu == 3:

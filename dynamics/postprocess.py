@@ -78,16 +78,16 @@ def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
     u = np.linspace(0.0, 2.0 * np.pi, 100)
     v = np.linspace(0.0, np.pi, 100)
     if type == 'pos':
-        x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU
-        y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU
-        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU
+        x = radii[0] * np.outer(np.cos(u), np.sin(v)) # * LU
+        y = radii[1] * np.outer(np.sin(u), np.sin(v)) # * LU
+        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) # * LU
         ax.set_xlabel('T [km]')
         ax.set_ylabel('N [km]')
         ax.set_zlabel('R [km]')
     if type == 'vel':
-        x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU/TU
-        y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU/TU
-        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU/TU
+        x = radii[0] * np.outer(np.cos(u), np.sin(v)) # * LU/TU
+        y = radii[1] * np.outer(np.sin(u), np.sin(v)) # * LU/TU
+        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) # * LU/TU
         ax.set_xlabel('T [km/s]')
         ax.set_ylabel('N [km/s]')
         ax.set_zlabel('R [km/s]')
@@ -99,4 +99,4 @@ def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
     # ax.set_xlabel('T [km]')
     # ax.set_ylabel('N [km]')
     # ax.set_zlabel('R [km]')
-    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.2, label = label, color = color) # color = 'b'
+    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.5, label = label, color = color) # color = 'b'

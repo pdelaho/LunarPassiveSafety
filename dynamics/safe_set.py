@@ -17,15 +17,21 @@ def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
             prob: RPOD OCP class
         return:
             PP: coefficient matrix for the passive safety ellipsoid ("P^-1" for the ellipsoid)
-                inv_PP[:,:,j] = shape of j-step backward reachable set (RS)
+                inv_PP[j,:,:] = shape of j-step backward reachable set (RS)
     """
     nx = prob.nx
     inv_PP = np.zeros((N, nx, nx))
 
     for j in range(N):
-        
         Phi = prob.stm[final_time_step-j-1,:,:]
-        inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+
+        if j > 0:
+            # inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+            inv_PP[j,:,:] = Phi.T @ inv_PP[j-1,:,:] @ Phi
+        if j == 0:
+            inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+
+
       
     return inv_PP
 
@@ -48,7 +54,9 @@ def extract_closest_ellipsoid(x_ref, inv_PP_unsafe, l):
         # choose the ellipsoids that are the closest to the current state (conservative)
         smallest_ele = heapq.nsmallest(l, rho_sq)
     
-    return [inv_PP_unsafe[i,:,:] for i, elem in enumerate(rho_sq) if elem in smallest_ele]
+    closest_ellipsoids = [inv_PP_unsafe[i,:,:] for i, elem in enumerate(rho_sq) if (elem in smallest_ele and elem > 1)]
+    indices = [i for i, elem in enumerate(rho_sq) if (elem in smallest_ele and elem > 1)]
+    return closest_ellipsoids, indices
 
 def convexify_safety_constraint(x_ref, inv_PP_close, l):
     """

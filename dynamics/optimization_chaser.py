@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import csv
 import scipy as sc
 import time
+import os
+import sys
 
 # Importing linear dynamics of the chaser from another file
 from linear_dynamics_LVLH import *
@@ -20,7 +22,10 @@ from linear_dynamics_LVLH import *
 # Read the csv file with the data for the target's trajectory
 # Everything (time, distances, speeds are non-dimensionalized)
 
-file = open("target_chaser_trajectories.csv","r")
+root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(root_folder)
+fname = root_folder + "/dynamics/data/target_chaser_trajectories.csv"
+file = open(fname,"r")
 reader = csv.reader(file)
 data_target = []
 data_chaser = []
