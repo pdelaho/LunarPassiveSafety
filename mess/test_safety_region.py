@@ -1,12 +1,17 @@
+import setup_path   ## IMPORTANT: make sure to access /src/
+import os
+import sys
+
+root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(root_folder)
+
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import os
 
-from problem_class import *
-from ocp import *
-from postprocess import *
-from safe_set import *
+from dynamics.problem_class import *
+from dynamics.ocp import *
+from dynamics.postprocess import *
+from dynamics.safe_set import *
 
 L2x = 1.15568217 # nd, position of the L2 point
 
@@ -44,10 +49,7 @@ inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf, final_time_step) # computing
 print(volume_ellipsoid(inv_Pf, LU, TU),volume_ellipsoid(inv_PP[-1], LU, TU))
 
 # x_out = generate_outside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0])) # Generating a random vector outside the unsafe ellipsoid
-# x_out = np.asarray([1*1e-5,0,3*1e-5,0,0,0])
-x_out = np.asarray([0,0,2.48*1e-5,0,0,0])
-# x_out = np.asarray([3*1e-5,0,1e-5,0,0,0])
-# x_out = np.asarray([])
+x_out = np.asarray([1*1e-5,0,3*1e-5,0,0,0])
 
 print(x_out, x_out @ inv_PP[-1] @ x_out.T, np.linalg.norm(x_out)*LU)
 
@@ -78,8 +80,8 @@ chaser_traj = sol2["mu"]
 l_opt = sol2["l"]
 a_opt = sol2["v"]
 
-print(chaser_traj[final_time_step] @ inv_Pf @ chaser_traj[final_time_step].T)
-print(p_trans.chaser_nonlin_traj[final_time_step] @ inv_Pf @ p_trans.chaser_nonlin_traj[final_time_step].T)
+print(chaser_traj[final_time_step] @ inv_PP[-1] @ chaser_traj[final_time_step].T)
+print(p_trans.chaser_nonlin_traj[final_time_step] @ inv_PP[-1] @ p_trans.chaser_nonlin_traj[final_time_step].T)
 
 closest_ellipsoids, indices = extract_closest_ellipsoid(x_out, inv_PP, 1)
 closest_ellipsoids = np.asarray(closest_ellipsoids)
@@ -89,13 +91,12 @@ h = convexify_safety_constraint(x_out, closest_ellipsoids, 1)
 print(h)
 
 # create x,y
-xx, yy = np.meshgrid(range(0,40), range(-50,60))
-# xx, yy = np.meshgrid(range(-2,2), range(-2,2))
-xx = np.asarray(xx)*1e-6
-yy = np.asarray(yy)*1e-6
+xx, yy = np.meshgrid(range(-5,6), range(-5,6))
+xx = np.asarray(xx)*1e-5
+yy = np.asarray(yy)*1e-5
 
 # calculate corresponding z
-z = (-h[0] * xx - h[1] * yy + 1) * 1. / h[2]
+z = (-h[0] * xx - h[1] * yy + 1) * 1. /h[2]
 
 # plot the surface
 fig = plt.figure()
@@ -126,8 +127,6 @@ plt.legend()
 plt.show()
 
 
-
-
 ## Tests for the part where we extract the n closest ellipsoids given a state point
 
 # First trying with ellipsoids and points completely different from the ones we'll have in the RPOD scenario to check
@@ -149,6 +148,9 @@ x_test = np.asarray([1,2,3])
 
 closest_ellipsoid, indices = extract_closest_ellipsoid(x_test, P, 1)
 # print(indices)
+
+# Seems like it works, NOW TRY WITH THE DATA FROM THE RPOD SCENARIO -> done before these tests
+
 
 ## Tests for the part where we convexify (thanks to a hyperplane) the constraints of staying outside the unsafe ellipsoid
 

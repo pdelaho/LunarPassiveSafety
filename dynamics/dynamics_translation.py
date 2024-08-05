@@ -168,7 +168,7 @@ def get_traj_ref(initial_conditions_target, M0, horizon, period, mu, n_time):
     traj = np.empty(shape=(n_time, 6), dtype=float)
 
     time[0] = 0
-    t_init = period * np.radians(M0) / (2 * np.pi) - period / 2 # Using the following definition of the mean anomaly: M = 2*pi*t/period
+    t_init = period * M0 / (2 * np.pi) - period / 2 # Using the following definition of the mean anomaly: M = 2*pi*t/period
     t_sim = np.linspace(0,t_init,1000)
     traj_prel = integrate.odeint(dynamics_synodic,initial_conditions_target,t_sim,args=(mu,))
     

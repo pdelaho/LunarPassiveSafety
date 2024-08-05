@@ -33,10 +33,15 @@ class CR3BP_RPOD_OCP:
         self.n_time = n_time
         self.nx = nx
         self.nu = nu 
-        self.M0 = M0 
+        self.M0 = np.radians(M0) 
         self.tf_orbit = tf   # numer of orbits
         self.control = control
-        # self.ti = self.M0 * self.period / (2*np.pi)
+        if M0 < 180:
+            self.ti = self.M0 * self.period / (2*np.pi) + self.period / 2
+        if M0> 180:
+            self.ti = self.M0 *self.period /(2*np.pi) - self.period / 2
+        if M0 == 180:
+            self.ti = 0
         
         # boundary condition 
         self.μ0 = mu0 
@@ -64,6 +69,12 @@ class CR3BP_RPOD_OCP:
     def load_traj_data(self, fname):
         # Getting the reference trajectory for the target spacecraft from a json file
         time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
-        # ti_step = np.argmin([ abs(i-self.ti) for i in time])
-        self.time_hrz = time[:self.n_time]
-        self.target_traj = traj[:self.n_time]
+        ti_idx = np.argmin([abs(i-self.ti) for i in time]) # finding the index with the closest time step to our desired initial time
+        if len(time) - ti_idx - 1 - self.n_time > 0:
+            self.time_hrz = time[ti_idx : ti_idx + self.n_time]
+            self.target_traj = traj[ti_idx : ti_idx + self.n_time]
+        else:
+            self.time_hrz = time[ti_idx:]
+            self.target_traj = traj[ti_idx:]
+        # self.time_hrz = time[:self.n_time]
+        # self.target_traj = traj[:self.n_time]

@@ -46,16 +46,17 @@ def extract_closest_ellipsoid(x_ref, inv_PP_unsafe, l):
         PP_close: closest ellipsoids' shape matrices. 
     """
     rho_sq = [x_ref.T @ inv_PP_unsafe[k,:,:] @ x_ref for k in range(inv_PP_unsafe.shape[0])]
-
+    
     if inv_PP_unsafe.shape[0] < l:
         print("(warning) the number of the ellipoids is less than l. Check the input...")
         smallest_ele = rho_sq
     else:
         # choose the ellipsoids that are the closest to the current state (conservative)
-        smallest_ele = heapq.nsmallest(l, rho_sq)
+        # smallest_ele = heapq.nsmallest(l, rho_sq)
+        smallest_ele = heapq.nsmallest(l, [x for x in rho_sq if x>1.0])
     
-    closest_ellipsoids = [inv_PP_unsafe[i,:,:] for i, elem in enumerate(rho_sq) if (elem in smallest_ele and elem > 1)]
-    indices = [i for i, elem in enumerate(rho_sq) if (elem in smallest_ele and elem > 1)]
+    closest_ellipsoids = [inv_PP_unsafe[i,:,:] for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]
+    indices = [i for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]
     return closest_ellipsoids, indices
 
 def convexify_safety_constraint(x_ref, inv_PP_close, l):
