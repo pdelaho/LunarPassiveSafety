@@ -37,6 +37,8 @@ class OCP:
 
 prob = OCP(mats)
 
+print(np.round(prob.stm[0],4))
+
 # boundary condition (in km, and non-dimensionalized by LU)
 # LVLH [i,j,k] = [T, -N, -R]
 prob.μ0 = np.array([-40, 0, 4, 0.005747, 0, 0]) / LU   
@@ -44,6 +46,7 @@ prob.μf = np.array([0, 0, 0.5, 0, 0, 0]) / LU
 prob.μ0[3:] = prob.μ0[3:] * TU
 prob.μf[3:] = prob.μf[3:] * TU
 prob.n_time = int(19140 / dt)  
+
 
 # waypoints 
 prob.con_list = {"wyp": True}   
@@ -58,12 +61,18 @@ prob.wyp   = np.array([[ -20,    0, 4,   0.0039216,    0, -0.0012745,   ],
                        [ -0.5,   0, 0.0,   0.000277778, 0, 0.00027778,  ],
                        ]) / LU 
 prob.wyp[:,3:] = prob.wyp[:,3:] * TU    
+
+prob.wyp_t = np.array([])
+prob.wyp = np.array([]) 
 prob.dt = dt
 
 sol = ocp_cvx(prob) 
 s  = sol["mu"] 
-J   = sol["control_cost"]    
-print(f"J (control cost): {J}")
+a  = sol["v"]
+J   = sol["control_cost"]   
+print(f"J: {np.sum(np.linalg.norm(a, axis=1))}, {J}")    
+dvtot = np.sum(np.linalg.norm(a, axis=1)) * LU/TU*1e6 
+print(f"DV (control cost): {dvtot} mm/s")
 
 # plot the absolute trajectory (NRHO)
 fig = plt.figure(figsize=(10,8)) 
@@ -108,20 +117,39 @@ plt.grid("minor")
 plt.legend()
 
 
-# control history 
+# control history (stem plot)
 fig = plt.figure(figsize=(10,8))
-ax = fig.add_subplot(111)
-ax.plot(t[:prob.n_time-1], sol["v"][:,0], label='T')
-ax.plot(t[:prob.n_time-1], -sol["v"][:,1], label='N')
-ax.plot(t[:prob.n_time-1], -sol["v"][:,2], label='R')
+t_dim = t[:prob.n_time-1] * TU / 60 / 60  # hours 
+ax1 = fig.add_subplot(131)
+ax1.stem(t_dim, -sol["v"][:,2]*LU/TU*1e6)
 for i in range(len(prob.wyp)):
     idx = int(prob.wyp_t[i] / dt)
-    ax.vlines(x=t[idx], ymin=-0.1, ymax=0.1, color='gray', linestyles="dashed", linewidth=0.5, label='waypoint')
-ax.set_xlabel('time, TU')
-ax.set_ylabel('control')
-ymax = np.max(np.max(np.abs(sol["v"])))
-ax.set_ylim(-ymax, ymax)
+    ax1.vlines(x=t_dim[idx], ymin=-1000, ymax=1000, color='gray', linestyles="dashed", linewidth=0.5)
+ax1.set_xlabel('time, [hrs]')
+ax1.set_ylabel('$\Delta V_R, [mm/s]$')    
+    
+ax2 = fig.add_subplot(132)
+ax2.stem(t_dim, sol["v"][:,0]*LU/TU*1e6)
+for i in range(len(prob.wyp)):
+    idx = int(prob.wyp_t[i] / dt)
+    ax2.vlines(x=t_dim[idx], ymin=-1000, ymax=1000, color='gray', linestyles="dashed", linewidth=0.5)
+ax2.set_xlabel('time, [hrs]')
+ax2.set_ylabel('$\Delta V_T, [mm/s]$') 
+
+ax3 = fig.add_subplot(133)
+ax3.stem(t_dim, -sol["v"][:,1]*LU/TU*1e6)
+for i in range(len(prob.wyp)):
+    idx = int(prob.wyp_t[i] / dt)
+    ax3.vlines(x=t_dim[idx], ymin=-1000, ymax=1000, color='gray', linestyles="dashed", linewidth=0.5)
+ax3.set_xlabel('time, [hrs]')
+ax3.set_ylabel('$\Delta V_N, [mm/s]$') 
+
+ymax = np.max(np.max(np.abs(sol["v"]*LU/TU*1e6)))
+ax1.set_ylim(-ymax, ymax)
+ax2.set_ylim(-ymax, ymax)
+ax3.set_ylim(-ymax, ymax)
 plt.legend()
+plt.tight_layout()
 
 plt.show() 
 print("done!!")

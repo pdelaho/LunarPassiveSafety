@@ -39,12 +39,13 @@ def ocp_cvx(prob):
         for i in range(len(prob.wyp_t)):
             idx = int(prob.wyp_t[i] / dt) 
             con += [s[idx] == prob.wyp[i]]
+            # con += [s[idx,:3] == prob.wyp[i,:3]]  # anchoring only position
 
     
     if prob.nu == 3:
-        J = cp.sum(cp.norm(a, 2, axis=0))
+        J = cp.sum(cp.norm(a, 2, axis=1))
     else:
-        J = cp.sum(cp.norm(a[:,:3], 2, axis=0)) + cp.sum(cp.norm(a[:,3:], 2, axis=0))
+        J = cp.sum(cp.norm(a[:,:3], 2, axis=1)) + cp.sum(cp.norm(a[:,3:], 2, axis=1))
     
     cost += J
     cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e3   # slack variable penalty 
@@ -61,3 +62,4 @@ def ocp_cvx(prob):
     sol = {"mu": s_opt, "v": a_opt, "l": l_opt, "status": status, "control_cost": J_opt, "value": value}
     
     return sol
+
