@@ -38,18 +38,20 @@ p_trans = CR3BP_RPOD_OCP(
 p_trans.load_traj_data(fname)
 p_trans.linearize_trans()
 
+# if final_time_step > len(p_trans.time_hrz):
+#     final_time_step = len(p_trans.time_hrz) - 1
 N = final_time_step
 inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf, final_time_step) # computing the unsafe ellipsoids
 
-print(volume_ellipsoid(inv_Pf, LU, TU),volume_ellipsoid(inv_PP[-1], LU, TU))
+# print(volume_ellipsoid(inv_Pf, LU, TU),volume_ellipsoid(inv_PP[-1], LU, TU))
 
-# x_out = generate_outside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0])) # Generating a random vector outside the unsafe ellipsoid
 # x_out = np.asarray([1*1e-5,0,3*1e-5,0,0,0])
-x_out = np.asarray([0,0,2.48*1e-5,0,0,0])
+# x_out = np.asarray([0,0,2.48*1e-5,0,0,0])
 # x_out = np.asarray([3*1e-5,0,1e-5,0,0,0])
-# x_out = np.asarray([])
+# x_out = np.asarray([0,0,0,1.5*1e-3,0,5*1e-4])
+x_out = np.asarray([0,0,0,2.5*1e-4,0,2.5*1e-4])
 
-print(x_out, x_out @ inv_PP[-1] @ x_out.T, np.linalg.norm(x_out)*LU)
+print(x_out @ inv_PP[-1] @ x_out.T)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
@@ -86,7 +88,7 @@ closest_ellipsoids = np.asarray(closest_ellipsoids)
 print(indices)
 
 h = convexify_safety_constraint(x_out, closest_ellipsoids, 1)
-print(h)
+# print(h)
 
 # create x,y
 xx, yy = np.meshgrid(range(0,40), range(-50,60))
@@ -101,13 +103,13 @@ z = (-h[0] * xx - h[1] * yy + 1) * 1. / h[2]
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
-plot_ellipse_3D(inv_Pf[:3,:3], ax, LU, TU, 'Final KOZ', 'b', 'pos')
+# plot_ellipse_3D(inv_Pf[:3,:3], ax, LU, TU, 'Final KOZ', 'b', 'pos')
 plot_ellipse_3D(closest_ellipsoids[0,:3,:3], ax, LU, TU, 'Closest ellipsoid', 'r', 'pos')
 ax.scatter(x_out[0], x_out[1], x_out[2], c='k')
 ax.axis('equal')
 plt.legend()
 
-xx, yy = np.meshgrid(range(-5,6), range(-5,6))
+xx, yy = np.meshgrid(range(-30,30), range(-30,30))
 xx = np.asarray(xx)*1e-4
 yy = np.asarray(yy)*1e-4
 
@@ -116,8 +118,8 @@ z = (-h[3] * xx - h[4] * yy + 1) * 1. /h[5]
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-# ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
-plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU, TU, 'Final KOZ', 'b', 'vel')
+ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
+# plot_ellipse_3D(inv_Pf[3:6,3:6], ax, LU, TU, 'Final KOZ', 'b', 'vel')
 plot_ellipse_3D(closest_ellipsoids[0,3:6,3:6], ax, LU, TU, 'Closest ellipsoid', 'r', 'vel')
 ax.scatter(x_out[3], x_out[4], x_out[5], c='k')
 ax.axis('equal')

@@ -21,7 +21,7 @@ def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
     """
     nx = prob.nx
     inv_PP = np.zeros((N, nx, nx))
-
+    # if N<len(prob.time_hrz):
     for j in range(N):
         Phi = prob.stm[final_time_step-j-1,:,:]
 
@@ -30,7 +30,16 @@ def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
             inv_PP[j,:,:] = Phi.T @ inv_PP[j-1,:,:] @ Phi
         if j == 0:
             inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+    # if N>len(prob.time_hrz):
+    #     final_time_step = len(prob.time_hrz)-1
+    #     for j in range(len(prob.time_hrz)):
+    #         Phi = prob.stm[final_time_step-j-1,:,:]
 
+    #         if j > 0:
+    #             # inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+    #             inv_PP[j,:,:] = Phi.T @ inv_PP[j-1,:,:] @ Phi
+    #         if j == 0:
+    #             inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
 
       
     return inv_PP

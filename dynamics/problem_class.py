@@ -38,8 +38,10 @@ class CR3BP_RPOD_OCP:
         self.control = control
         if M0 < 180:
             self.ti = self.M0 * self.period / (2*np.pi) + self.period / 2
-        if M0> 180:
+            print('less')
+        if M0 > 180:
             self.ti = self.M0 *self.period /(2*np.pi) - self.period / 2
+            print('more')
         if M0 == 180:
             self.ti = 0
         
@@ -53,9 +55,9 @@ class CR3BP_RPOD_OCP:
         self.psi = None # Rotation matrix synodic -> LVLH
         pass
     
-    def get_traj_ref(self, n_time):
+    def get_traj_ref(self):
         # Generates the reference trajectory of the target spacecraft
-        self.target_traj, self.time_hrz, self.dt_hrz = get_traj_ref(self.initial_conditions_target, self.M0, self.tf_orbit, self.period, self.mu, n_time)
+        self.target_traj, self.time_hrz, self.dt_hrz = get_traj_ref(self.initial_conditions_target, self.M0, self.tf_orbit, self.period, self.mu, self.n_time)
         
     def linearize_trans(self):
         mats = linearize_translation(self.mu, self.target_traj, self.time_hrz, self.control)
@@ -69,12 +71,14 @@ class CR3BP_RPOD_OCP:
     def load_traj_data(self, fname):
         # Getting the reference trajectory for the target spacecraft from a json file
         time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
-        ti_idx = np.argmin([abs(i-self.ti) for i in time]) # finding the index with the closest time step to our desired initial time
-        if len(time) - ti_idx - 1 - self.n_time > 0:
-            self.time_hrz = time[ti_idx : ti_idx + self.n_time]
-            self.target_traj = traj[ti_idx : ti_idx + self.n_time]
-        else:
-            self.time_hrz = time[ti_idx:]
-            self.target_traj = traj[ti_idx:]
-        # self.time_hrz = time[:self.n_time]
-        # self.target_traj = traj[:self.n_time]
+        # ti_idx = np.argmin([abs(i-self.ti) for i in time]) # finding the index with the closest time step to our desired initial time
+        # self.ti_idx = ti_idx
+        # if len(time) - ti_idx - 1 - self.n_time > 0:
+        #     self.time_hrz = time[ti_idx : ti_idx + self.n_time]
+        #     self.target_traj = traj[ti_idx : ti_idx + self.n_time]
+        # else:
+        #     self.time_hrz = time[ti_idx:]
+        #     self.target_traj = traj[ti_idx:]
+        # print(ti_idx, self.time_hrz, self.target_traj[0])
+        self.time_hrz = time[:self.n_time]
+        self.target_traj = traj[:self.n_time]

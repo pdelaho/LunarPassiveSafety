@@ -12,6 +12,8 @@ def ocp_cvx(prob):
     s_0, s_f = prob.μ0, prob.μf
     n_time   = prob.n_time    
 
+    if n_time > len(prob.time_hrz):
+        n_time = len(prob.time_hrz)
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
