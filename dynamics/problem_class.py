@@ -16,7 +16,7 @@ class CR3BP_RPOD_OCP:
                  mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
                  n_time=100,nx=6,nu=3,M0=0,tf=1,mu0=None,muf=None,control=False):
         
-        # SCP parameters
+        # Convex problem parameters
         self.iter_max = iter_max
         
         # Data for the 3 body problem
@@ -25,7 +25,7 @@ class CR3BP_RPOD_OCP:
         self.n = mean_motion
         self.TU = 1/mean_motion
         
-        # Data abou the target's orbit
+        # Data about the target's orbit
         self.period = period
         self.initial_conditions_target = initial_conditions_target
         
@@ -77,8 +77,77 @@ class CR3BP_RPOD_OCP:
         #     self.time_hrz = time[ti_idx : ti_idx + self.n_time]
         #     self.target_traj = traj[ti_idx : ti_idx + self.n_time]
         # else:
-        #     self.time_hrz = time[ti_idx:]
+            # self.time_hrz = time[ti_idx:]
         #     self.target_traj = traj[ti_idx:]
         # print(ti_idx, self.time_hrz, self.target_traj[0])
         self.time_hrz = time[:self.n_time]
         self.target_traj = traj[:self.n_time]
+
+class SCVX_OCP():
+    def __init__(self,
+                 period,initial_conditions_target,koz_dim, N_BRS, iter_max=100,
+                 mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
+                 n_time=100,nx=6,nu=3,M0=180,tf=1,mu0=None,muf=None,control=False):
+        
+        # SCvx parameters, tune them to make the code run
+        self.iter_max = iter_max
+        self.α = ...
+        self.β = ...
+        self.γ = ...
+        self.ρ = ...
+        self.r_minmax = ...
+        self.εopt = 1e-4
+        self.εfeas = 1e-4
+        # self.pen_λ = ...
+        # self.pen_μ = ...
+        # self.pen_w = ...
+        # self.rk = ...
+        self.r0 = ...
+        self.w0 = ...
+        
+        # Data for the 3 body problem
+        self.mu = mu
+        self.LU = LU
+        self.n = mean_motion
+        self.TU = 1/mean_motion
+        
+        # Data about the target's orbit
+        self.period = period
+        self.initial_conditions_target = initial_conditions_target
+        
+        # keep-out-zones 
+        self.width_pos_koz  = koz_dim[0] # adimensionalized quantities
+        self.length_pos_koz = koz_dim[1]
+        self.height_pos_koz = koz_dim[2]
+        self.width_vel_koz  = koz_dim[3]
+        self.length_vel_koz = koz_dim[4]
+        self.height_vel_koz = koz_dim[5]
+        self.N_BRS = N_BRS # Number of steps ahead we wanna ensure passive safety
+        
+        # SCP setups 
+        self.n_time = n_time # number of steps we're simulating for, IS THAT USEFUL STILL?
+        self.nx = nx # State vector size
+        self.nu = nu # Control vector size
+        self.M0 = np.radians(M0) # Initial mean motion of the target
+        self.tf_orbit = tf   # numer of orbits
+        self.control = control # Boolean, do we consider controls?
+        # Computing the initial time given the initial mean motion and that data starts at apoapsis
+        if M0 < 180:
+            self.ti = self.M0 * self.period / (2*np.pi) + self.period / 2
+            print('less')
+        if M0 > 180:
+            self.ti = self.M0 *self.period /(2*np.pi) - self.period / 2
+            print('more')
+        if M0 == 180:
+            self.ti = 0
+        
+        # Boundary conditions for the SCP problem
+        self.μ0 = mu0 
+        self.μf = muf
+        # self.s_ref = None # what's that variable?
+        
+        # Matrices
+        self.stm = None # State Transition Matrix
+        self.cim = None # Control Input Matrix
+        self.psi = None # Rotation matrix synodic -> LVLH
+        pass
