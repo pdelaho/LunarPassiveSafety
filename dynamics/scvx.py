@@ -10,7 +10,8 @@ def scvx_ocp(prob):
     n_time   = prob.n_time    
 
     if n_time > len(prob.time_hrz):
-        n_time = len(prob.time_hrz)
+        print("Simulation time larger than problem's time horizon")
+    
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
@@ -24,32 +25,36 @@ def scvx_ocp(prob):
     con += [s[-1] == s_f]
     
     # Unsafe ellipsoids constraint
-    Pf = np.diag([prob.width_pos_koz**2, prob.length_pos_koz**2, prob.height_pos_koz**2, prob.width_vel_koz**2, prob.length_vel_koz**2, prob.height_vel_koz**2])
-    inv_Pf = np.linalg.inv(Pf)
-    ellipsoids = passive_safe_ellipsoid(prob, prob.N_BRS, inv_Pf, i+prob.N_BRS)
-    for i in len(s):
-        closest, _ = extract_closest_ellipsoid(s[i], ellipsoids, 1)
-        a = convexify_safety_constraint(s[i], closest, 1)
-        con += [1 - np.dot(a,s[i]) <= 0]
+    if prob.con_list["BRS"]:
+        for i in len(s):
+            ellipsoids = passive_safe_ellipsoid_scvx(prob, i)
+            closest, _ = extract_closest_ellipsoid(s[i], ellipsoids, 1)
+            a = convexify_safety_constraint(s[i], closest, 1)
+            con += [1 - np.dot(a,s[i]) <= 0]
         
     # Add the trust region constraints
-    z = s.flatten('F')
-    z_bar = prob.s_ref.flatten('F')
-    con += [np.linalg.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
-        
-    f0 = cp.sum(cp.norm(a, 2, axis=1))
+    if prob.con_list["trust_region"]:
+        z = s.flatten('F')
+        z_bar = prob.s_ref.flatten('F')
+        con += [np.linalg.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
     
-    cost = J # need to add P and f0 to get the cost that we want to minimize
+    # Computing the cost L = f0 + P
+    f0 = cp.sum(cp.norm(a, 2, axis=1))
+    cost += f0
+    P = np.dot(prob.pen_λ, l) + (prob.pen_w/2) * cp.norm(l)**2 # zeta is 0 so just this part of P is non-zero
+    cost += P
     
     p = cp.Problem(cp.Minimize(cost), con)
     p.solve(solver=cp.MOSEK)
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    
-    J_opt  = J.value
+    f0_opt  = f0.value
+    P_opt = P.value
     status = p.status
     value  = p.value
     
-    sol = {"mu": s_opt, "v": a_opt, "l": l_opt,"status": status, "control_cost": J_opt, "value": value}
+    sol = {"mu": s_opt, "v": a_opt, "l": l_opt,"status": status, "f0": f0_opt, "P": P_opt, "value": value}
+    
     return sol
     

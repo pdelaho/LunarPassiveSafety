@@ -22,6 +22,7 @@ def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
     nx = prob.nx
     inv_PP = np.zeros((N, nx, nx))
     # if N<len(prob.time_hrz):
+    # N = prob.N_BRS 
     for j in range(N):
         Phi = prob.stm[final_time_step-j-1,:,:]
 
@@ -41,7 +42,35 @@ def passive_safe_ellipsoid(prob, N, inv_Pf, final_time_step):
     #         if j == 0:
     #             inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
 
-      
+    return inv_PP
+
+def passive_safe_ellipsoid_scvx(prob, state_index):
+    """
+        N-step Passive safety ellipoid generation. 
+        return the coefficient matrix K for the passive safety ellisoid.
+        at j-th step, the passive safety ellipsoid is given by:
+            x.T * PP * x <= 1,
+            K = Phi(kf, kf-j)^T * Pf * Phi(kf, kf-j)
+        args:
+            prob: SCvx OCP class
+            state_index: time step/index of the state we're looking at
+        return:
+            PP: coefficient matrix for the passive safety ellipsoid ("P^-1" for the ellipsoid)
+                inv_PP[j,:,:] = shape of j-step backward reachable set (RS)
+    """
+    nx = prob.nx
+    inv_PP = np.zeros((N, nx, nx))
+    N = prob.N_BRS 
+    
+    for j in range(N):
+        Phi = prob.stm[state_index + N - j,:,:] # should there be a -1 in here too? -> think about it
+
+        if j > 0:
+            # inv_PP[j,:,:] = Phi.T @ inv_Pf @ Phi
+            inv_PP[j,:,:] = Phi.T @ inv_PP[j-1,:,:] @ Phi
+        if j == 0:
+            inv_PP[j,:,:] = Phi.T @ prob.inv_Pf @ Phi
+
     return inv_PP
 
 def extract_closest_ellipsoid(x_ref, inv_PP_unsafe, l):
