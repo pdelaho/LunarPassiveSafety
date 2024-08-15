@@ -87,7 +87,7 @@ class SCVX_OCP():
     def __init__(self,
                  period,initial_conditions_target, N_BRS, iter_max=100, koz_dim=None,
                  mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
-                 n_time=100,nx=6,nu=3,M0=180,tf=1,mu0=None,muf=None,control=False):
+                 n_time=100,nx=6,nu=3,M0=180,tf=1,mu0=None,muf=None,control=True):
         
         # SCvx parameters, tune them to make the code run
         self.iter_max = iter_max
@@ -128,7 +128,7 @@ class SCVX_OCP():
             self.N_BRS = N_BRS # Number of steps ahead we wanna ensure passive safety
         
         # SCP setups 
-        self.n_time = n_time # number of steps we're simulating for, IS THAT USEFUL STILL?
+        self.n_time = n_time # number of steps we're simulating for
         self.nx = nx # State vector size
         self.nu = nu # Control vector size
         self.M0 = np.radians(M0) # Initial mean motion of the target
@@ -173,7 +173,7 @@ class SCVX_OCP():
             # self.time_hrz = time[ti_idx:]
         #     self.target_traj = traj[ti_idx:]
         # print(ti_idx, self.time_hrz, self.target_traj[0])
-        self.time_hrz = time[:self.n_time]
+        self.time_hrz = time[:self.n_time + self.N_BRS]
         self.target_traj = traj[:self.n_time + self.N_BRS] # or n_time + N_BRS - 1?
         
     def linearize_trans(self):

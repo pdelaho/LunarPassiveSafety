@@ -196,3 +196,18 @@ def get_chaser_nonlin_traj(initial_condition, target_traj, time, mu):
         chaser_traj_lvlh[i] = synodic_to_lvlh(chaser_traj_syn[i,:], target_traj[i,:], mu)
 
     return chaser_traj_lvlh
+
+def dynamics_synodic_control(state,t,mu,a):
+    ds = np.zeros(6)
+    r = np.asarray(state[:3]).reshape((3,1))
+    r_dot = np.asarray(state[3:6]).reshape(3)
+    
+    ds[:3] = r_dot.reshape(3)
+    
+    omega_mi = np.asarray([0,0,1]).reshape(3)
+    r_em = np.asarray([[-1],[0],[0]]).reshape((3,1))
+    
+    r_ddot = -2*np.cross(omega_mi,r_dot).reshape((3,1)) - np.cross(omega_mi,np.cross(omega_mi,r.reshape(3))).reshape((3,1)) - mu*r/(np.linalg.norm(r)**3) - (1-mu)*((r+r_em)/(np.linalg.norm(r+r_em)**3) - r_em) + a.reshape((3,1))
+    ds[3:6] = r_ddot.reshape(3)
+    
+    return ds

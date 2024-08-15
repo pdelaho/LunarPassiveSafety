@@ -59,8 +59,8 @@ def passive_safe_ellipsoid_scvx(prob, state_index):
                 inv_PP[j,:,:] = shape of j-step backward reachable set (RS)
     """
     nx = prob.nx
+    N = prob.N_BRS
     inv_PP = np.zeros((N, nx, nx))
-    N = prob.N_BRS 
     
     for j in range(N):
         Phi = prob.stm[state_index + N - j,:,:] # should there be a -1 in here too? -> think about it

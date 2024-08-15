@@ -15,7 +15,7 @@ def scvx_ocp(prob):
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
-    l  = cp.Variable((n_time-1, nx))
+    l  = cp.Variable((n_time-1, nx)) # not the right shape for l
     
     # dynamics and boundary conditions
     con = []
@@ -41,7 +41,7 @@ def scvx_ocp(prob):
     # Computing the cost L = f0 + P
     f0 = cp.sum(cp.norm(a, 2, axis=1))
     cost += f0
-    P = np.dot(prob.pen_λ, l) + (prob.pen_w/2) * cp.norm(l)**2 # zeta is 0 so just this part of P is non-zero
+    P = prob.pen_λ.T @ l.flatten('F') + (prob.pen_w/2) * cp.norm(l)**2 # zeta is 0 so just this part of P is non-zero
     cost += P
     
     p = cp.Problem(cp.Minimize(cost), con)
