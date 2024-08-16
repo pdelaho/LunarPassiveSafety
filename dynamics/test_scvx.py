@@ -17,9 +17,10 @@ p_trans = SCVX_OCP(period=t[-1],initial_conditions_target=target_traj[0], N_BRS=
                  mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
                  n_time=100,nx=6,nu=3,M0=180,tf=1,mu0=None,muf=None,control=True)
 
-p_trans.μf = np.array([1.1/LU,0,0,0,0,0])
-p_trans.μ0 = np.array([10/LU,0,50/LU,0,0,0])
+p_trans.μf = np.array([-5/LU,-2/LU,-1/LU,0,0,0])
+p_trans.μ0 = np.array([10/LU,6/LU,20/LU,0,0,0])
 
+p_trans.con_list["BRS"] = False
 # think about what I could print/plot to check the BRS constraints
 # think about initial/final conditions with which it would be easy to check as well
 
@@ -33,10 +34,21 @@ plot_chaser_traj_lvlh(sol_0["mu"],LU)
 # plt.show()
 μref = sol_0["mu"]
 # print(μref.shape)
+p_trans.s_ref = μref
+p_trans.get_unsafe_ellipsoids()
 
 prob, log = scvx_star(p_trans, sol_0, μref, fname)
 traj = prob.s_ref
 print(traj.shape)
-plot_chaser_traj_lvlh(traj,LU)
+print(prob.inv_PP.shape)
+
+# Doesn't work, fix it!!
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+plot_ellipse_3D(p_trans.inv_PP[85,0,:3,:3], ax, LU, TU, label='Final KOZ', color='b', type='pos')
+plot_ellipse_3D(p_trans.inv_Pf[:3,:3], ax, LU, TU, label='Final KOZ', color='r', type='pos')
+plot_chaser_traj_lvlh_scvx(traj, ax, LU)
+ax.scatter(traj[85,0]*LU, -traj[85,1]*LU, -traj[85,2]*LU, color='y', marker='*')
+plt.legend()
 plt.show()
 

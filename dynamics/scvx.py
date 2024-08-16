@@ -26,8 +26,10 @@ def scvx_ocp(prob):
     
     # Unsafe ellipsoids constraint
     if prob.con_list["BRS"]:
-        for i in len(s):
+        # prob.inv_PP = np.empty((n_time, prob.N_BRS, nx, nx))
+        for i in range(n_time):
             ellipsoids = passive_safe_ellipsoid_scvx(prob, i)
+            # prob.inv_PP[i] = ellipsoids
             closest, _ = extract_closest_ellipsoid(s[i], ellipsoids, 1)
             a = convexify_safety_constraint(s[i], closest, 1)
             con += [1 - np.dot(a,s[i]) <= 0]
@@ -45,7 +47,7 @@ def scvx_ocp(prob):
     cost += P
     
     p = cp.Problem(cp.Minimize(cost), con)
-    p.solve(solver=cp.MOSEK)
+    p.solve(solver=cp.CLARABEL) # cp.MOSEK
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    

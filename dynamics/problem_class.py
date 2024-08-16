@@ -1,6 +1,7 @@
 import dataclasses
 
 from dynamics_linearized import *
+from safe_set import *
 # from get_initial_conditions import *
 
 
@@ -126,6 +127,7 @@ class SCVX_OCP():
             Pf = np.diag([koz_dim[0]**2, koz_dim[1]**2, koz_dim[2]**2, koz_dim[3]**2, koz_dim[4]**2, koz_dim[5]**2])
             self.inv_Pf = np.linalg.inv(Pf)
             self.N_BRS = N_BRS # Number of steps ahead we wanna ensure passive safety
+            self.inv_PP = None
         
         # SCP setups 
         self.n_time = n_time # number of steps we're simulating for
@@ -179,3 +181,9 @@ class SCVX_OCP():
     def linearize_trans(self):
         mats = linearize_translation_scvx(self.mu, self.target_traj, self.time_hrz, self.control)
         self.stm, self.cim, self.psi = mats["stm"], mats["cim"], mats["psi"]
+    
+    def get_unsafe_ellipsoids(self):
+        self.inv_PP = np.empty((self.n_time, self.N_BRS, self.nx, self.nx))
+        for i in range(len(self.s_ref)):
+            ellipsoids = passive_safe_ellipsoid_scvx(self, i)
+            self.inv_PP[i] = ellipsoids

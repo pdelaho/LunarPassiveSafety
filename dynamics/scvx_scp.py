@@ -54,7 +54,10 @@ def compute_h(sol, prob): # should include what's not sol or prob in the problem
     for i in range(len(x[1:-1])):
         state = x[i+1]
         inv_PP = passive_safe_ellipsoid_scvx(prob, i)
-        closest_ellipsoid, _ = extract_closest_ellipsoid(state, inv_PP, 1)
+        # print(inv_PP)
+        # print(state @ inv_PP[0] @ state)
+        closest_ellipsoid, _ = extract_closest_ellipsoid_scvx(state, inv_PP, 1)
+        # print(closest_ellipsoid)
         a = convexify_safety_constraint(state, closest_ellipsoid, 1)
         h_cvx[i] = 1 - np.dot(a, state)
     h = np.zeros(1)

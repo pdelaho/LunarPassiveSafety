@@ -32,6 +32,22 @@ def plot_chaser_traj_lvlh(chaser_traj,LU):
     plt.title("Chaser's trajectory in the LVLH frame")
     plt.grid()
     
+def plot_chaser_traj_lvlh_scvx(chaser_traj, ax, LU):
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    ax.plot(chaser_traj[:,0]*LU, -chaser_traj[:,1]*LU, -chaser_traj[:,2]*LU, color='r', label="Chaser's trajectory")
+    # ax.scatter(0, 0, 0, label='Target')
+    ax.scatter(chaser_traj[0,0]*LU,-chaser_traj[0,1]*LU,-chaser_traj[0,2]*LU,label='Start')
+    ax.scatter(chaser_traj[-1,0]*LU,-chaser_traj[-1,1]*LU,-chaser_traj[-1,2]*LU,label='End')
+    ax.axis('equal')
+    # LVLH [i,j,k] = [T, -N, -R]
+    ax.set_xlabel('T [km]')
+    ax.set_ylabel('N [km]')
+    ax.set_zlabel('R [km]')
+    ax.legend()
+    plt.title("Chaser's trajectory in the LVLH frame")
+    plt.grid()
+    
 def analysis(chaser_nonlin_traj,chaser_lin_traj,n_time):
     error_lin_pos = np.empty(n_time)
     error_lin_vel = np.empty(n_time)
@@ -78,9 +94,9 @@ def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
     u = np.linspace(0.0, 2.0 * np.pi, 100)
     v = np.linspace(0.0, np.pi, 100)
     if type == 'pos':
-        x = radii[0] * np.outer(np.cos(u), np.sin(v)) # * LU
-        y = radii[1] * np.outer(np.sin(u), np.sin(v)) # * LU
-        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) # * LU
+        x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU
+        y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU
+        z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU
         ax.set_xlabel('T [km]')
         ax.set_ylabel('N [km]')
         ax.set_zlabel('R [km]')
@@ -99,4 +115,4 @@ def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
     # ax.set_xlabel('T [km]')
     # ax.set_ylabel('N [km]')
     # ax.set_zlabel('R [km]')
-    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.5, label = label, color = color) # color = 'b'
+    ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, alpha=0.2, label = label, color = color) # color = 'b'
