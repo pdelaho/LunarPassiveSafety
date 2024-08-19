@@ -117,6 +117,7 @@ def extract_closest_ellipsoid_scvx(x_ref, inv_PP_unsafe, l):
         PP_close: closest ellipsoids' shape matrices. 
     """
     rho_sq = [x_ref.T @ inv_PP_unsafe[k,:,:] @ x_ref for k in range(inv_PP_unsafe.shape[0])]
+    # print(rho_sq[4], rho_sq[4].size)
     
     if inv_PP_unsafe.shape[0] < l:
         print("(warning) the number of the ellipoids is less than l. Check the input...")
@@ -126,16 +127,16 @@ def extract_closest_ellipsoid_scvx(x_ref, inv_PP_unsafe, l):
         # smallest_ele = heapq.nsmallest(l, rho_sq)
         
         # Removing the condition that the state should be outside (ie x>1), see if I need it back
-        smallest_ele = heapq.nsmallest(l, [x for x in rho_sq]) # if x>1.0])
+        # smallest_ele = heapq.nsmallest(l, [x for x in rho_sq]) # if x>1.0])
         # smallest_ele = cp.min([x for x in rho_sq]) # if x>1.0])
-        # if l == 1:
-        #     # print(rho_sq)
-        #     smallest_ele = min([x for x in rho_sq]) # if x>1.0])
-        #     # print(smallest_ele)
-        #     # ind = rho_sq.index(smallest_ele)
-        #     ind = [i for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]
-        #     # print('hello', ind)
-        #     return [inv_PP_unsafe[ind,:,:] for i in range(1)], ind
+        if l == 1:
+            # print(rho_sq)
+            smallest_ele = [min([x for x in rho_sq])] # if x>1.0])
+            # print(smallest_ele)
+            # ind = rho_sq.index(smallest_ele)
+            ind = [i for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]
+            # print('hello', ind)
+            return [inv_PP_unsafe[ind,:,:] for i in range(1)], ind
 
     closest_ellipsoids = [inv_PP_unsafe[i,:,:] for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]
     indices = [i for i, elem in enumerate(rho_sq) if elem in smallest_ele] # and elem > 1.0)]

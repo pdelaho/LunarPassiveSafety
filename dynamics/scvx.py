@@ -7,7 +7,8 @@ def scvx_ocp(prob):
     nx, nu   = prob.nx, prob.nu
     A, B     = prob.stm, prob.cim # generalized dynamics 
     s_0, s_f = prob.μ0, prob.μf
-    n_time   = prob.n_time    
+    n_time   = prob.n_time
+    # μref = prob.s_ref
 
     if n_time > len(prob.time_hrz):
         print("Simulation time larger than problem's time horizon")
@@ -27,12 +28,14 @@ def scvx_ocp(prob):
     # Unsafe ellipsoids constraint
     if prob.con_list["BRS"]:
         # prob.inv_PP = np.empty((n_time, prob.N_BRS, nx, nx))
+        # for i in range(n_time):
+        #     ellipsoids = passive_safe_ellipsoid_scvx(prob, i)
+        #     # prob.inv_PP[i] = ellipsoids
+        #     closest, _ = extract_closest_ellipsoid_scvx(s[i], ellipsoids, 1)
+        #     a = convexify_safety_constraint(s[i], closest, 1) # SHOULDN'T BE s[i] BUT THE REFERENCE TRAJECTORY (COMPUTATIONS DONE BEFOREHAND)
+        #     con += [1 - np.dot(a,s[i]) <= 0]
         for i in range(n_time):
-            ellipsoids = passive_safe_ellipsoid_scvx(prob, i)
-            # prob.inv_PP[i] = ellipsoids
-            closest, _ = extract_closest_ellipsoid(s[i], ellipsoids, 1)
-            a = convexify_safety_constraint(s[i], closest, 1)
-            con += [1 - np.dot(a,s[i]) <= 0]
+            con += [1 - prob.hyperplanes[i].T @ s[i].reshape((nx,1)) <= 0]
         
     # Add the trust region constraints
     if prob.con_list["trust_region"]:
@@ -47,7 +50,7 @@ def scvx_ocp(prob):
     cost += P
     
     p = cp.Problem(cp.Minimize(cost), con)
-    p.solve(solver=cp.CLARABEL) # cp.MOSEK
+    p.solve(solver=cp.MOSEK) # cp.MOSEK, CLARABEL, SCS
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    

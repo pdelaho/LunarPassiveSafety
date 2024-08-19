@@ -128,6 +128,7 @@ class SCVX_OCP():
             self.inv_Pf = np.linalg.inv(Pf)
             self.N_BRS = N_BRS # Number of steps ahead we wanna ensure passive safety
             self.inv_PP = None
+            self.hyperplanes = np.empty((n_time, nx, 1))
         
         # SCP setups 
         self.n_time = n_time # number of steps we're simulating for

@@ -39,7 +39,7 @@ def ocp_cvx(prob):
         J = cp.sum(cp.norm(a[:,:3], 2, axis=0)) + cp.sum(cp.norm(a[:,3:], 2, axis=0))
     
     cost += J
-    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e3   # slack variable penalty 
+    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e5   # slack variable penalty, * 1e3 
     
     p = cp.Problem(cp.Minimize(cost), con)
     p.solve(solver=cp.MOSEK, verbose=False)

@@ -20,7 +20,7 @@ p_trans = SCVX_OCP(period=t[-1],initial_conditions_target=target_traj[0], N_BRS=
 p_trans.μf = np.array([-5/LU,-2/LU,-1/LU,0,0,0])
 p_trans.μ0 = np.array([10/LU,6/LU,20/LU,0,0,0])
 
-p_trans.con_list["BRS"] = False
+p_trans.con_list["BRS"] = True
 # think about what I could print/plot to check the BRS constraints
 # think about initial/final conditions with which it would be easy to check as well
 
@@ -30,6 +30,7 @@ p_trans.linearize_trans()
 
 
 sol_0 = ocp_cvx(p_trans)
+print(sol_0["control_cost"])
 plot_chaser_traj_lvlh(sol_0["mu"],LU)
 # plt.show()
 μref = sol_0["mu"]
@@ -39,8 +40,9 @@ p_trans.get_unsafe_ellipsoids()
 
 prob, log = scvx_star(p_trans, sol_0, μref, fname)
 traj = prob.s_ref
-print(traj.shape)
-print(prob.inv_PP.shape)
+# print(traj.shape)
+# print(prob.inv_PP.shape)
+print(log["f0"])
 
 # Doesn't work, fix it!!
 fig = plt.figure()

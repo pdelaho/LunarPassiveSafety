@@ -59,7 +59,7 @@ def compute_h(sol, prob): # should include what's not sol or prob in the problem
         closest_ellipsoid, _ = extract_closest_ellipsoid_scvx(state, inv_PP, 1)
         # print(closest_ellipsoid)
         a = convexify_safety_constraint(state, closest_ellipsoid, 1)
-        h_cvx[i] = 1 - np.dot(a, state)
+        h_cvx[i] = 1 - np.dot(a.reshape(6), state.reshape(6))
     h = np.zeros(1)
     
     return h, h_cvx
@@ -176,11 +176,15 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
     
     prob.load_traj_data(fname)
     prob.linearize_trans()
-
+    prob.get_unsafe_ellipsoids()
+    # print(prob.hyperplanes.shape)
     while abs(ΔJ) > prob.εopt or χ > prob.εfeas:
-        # compute linearized g about the last iteration solution -> linearize dynamics + add the correct constraints in the solving function
-        g_tilde = ...
-        # integrated in the solving function for now, no need to linearize h
+        # linearization of the dynamics and constraints -> get the perp vector for each half plane
+        for i in range(prob.n_time):
+            closest, _ = extract_closest_ellipsoid_scvx(prob.s_ref[i], prob.inv_PP[i], 1)
+            a = convexify_safety_constraint(prob.s_ref[i], closest, 1)
+            # print(a.shape)
+            prob.hyperplanes[i] = a
         
         # solve the convexified problem, get the suboptimal solution and slack variables
         sol = scvx_ocp(prob)
