@@ -97,16 +97,16 @@ def plot_ellipse_3D(P_inv, ax, LU, TU, label, color, type='pos'):
         x = radii[0] * np.outer(np.cos(u), np.sin(v)) * LU
         y = radii[1] * np.outer(np.sin(u), np.sin(v)) * LU
         z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) * LU
-        ax.set_xlabel('T [km]')
-        ax.set_ylabel('N [km]')
-        ax.set_zlabel('R [km]')
+        # ax.set_xlabel('T [nd]')
+        # ax.set_ylabel('N [nd]')
+        # ax.set_zlabel('R [nd]')
     if type == 'vel':
         x = radii[0] * np.outer(np.cos(u), np.sin(v)) # * LU/TU
         y = radii[1] * np.outer(np.sin(u), np.sin(v)) # * LU/TU
         z = radii[2] * np.outer(np.ones_like(u), np.cos(v)) # * LU/TU
-        ax.set_xlabel('T [km/s]')
-        ax.set_ylabel('N [km/s]')
-        ax.set_zlabel('R [km/s]')
+        ax.set_xlabel('T [nd]')
+        ax.set_ylabel('N [nd]')
+        ax.set_zlabel('R [nd]')
     
     for i in range(len(x)):
         for j in range(len(x)):

@@ -35,7 +35,7 @@ p_trans.linearize_trans()
 
 # Define the initial conditions for the chaser spacecraft
 # LVLH [i,j,k] = [T, -N, -R]
-init_cond = np.asarray([0,0,10,0,0,0])/LU # nd
+init_cond = np.asarray([0,10,0,0,0,0])/LU # nd
 
 p_trans.μ0 = init_cond
 p_trans.get_chaser_nonlin_traj()

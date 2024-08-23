@@ -24,6 +24,11 @@ p_trans.con_list["BRS"] = True
 # think about what I could print/plot to check the BRS constraints
 # think about initial/final conditions with which it would be easy to check as well
 
+# Seems to work now, try different initial conditions, more or less close to the area where linear approx of the dynamics hold
+# Maybe for each position of the final trajectory, compute the distance to the unsafe ellipsoids to make sure we stay outside
+# + plot them for a couple of the position
+# Make sure the shapes of the ellipsoids are changing as well
+
 p_trans.load_traj_data(fname)
 p_trans.linearize_trans()
 
@@ -34,17 +39,20 @@ print(sol_0["control_cost"])
 plot_chaser_traj_lvlh(sol_0["mu"],LU)
 # plt.show()
 μref = sol_0["mu"]
-# print(μref.shape)
 p_trans.s_ref = μref
 p_trans.get_unsafe_ellipsoids()
 
 prob, log = scvx_star(p_trans, sol_0, μref, fname)
 traj = prob.s_ref
-# print(traj.shape)
-# print(prob.inv_PP.shape)
 print(log["f0"])
+# print(np.asarray(log["a"])[-1])
 
-# Doesn't work, fix it!!
+plt.figure()
+plt.plot(np.asarray(log["a"])[-1,:,0], label='T') # same units as acceleration m/s^2
+plt.plot(np.asarray(log["a"])[-1,:,1], label='N')
+plt.plot(np.asarray(log["a"])[-1,:,2], label='R')
+plt.legend()
+
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 plot_ellipse_3D(p_trans.inv_PP[85,0,:3,:3], ax, LU, TU, label='Final KOZ', color='b', type='pos')
