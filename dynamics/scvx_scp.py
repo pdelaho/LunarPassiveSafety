@@ -102,7 +102,7 @@ def update_weights(sol, prob):
 
 
 def update_delta(δ, γ, ΔJ):
-    if δ > 1e10:
+    if δ < 1e10: # if \delta > 1e10:
         δ *= γ
     else:
         δ = abs(ΔJ)
@@ -116,21 +116,21 @@ def update_trust_region(r, α, ρ, ρk, r_minmax):
     r_min, r_max = r_minmax
     
     if ρk < ρ1:
-        return max([r/α1, r_min])
+        return np.max([r/α1, r_min])
     elif ρk < ρ2:
         return r
     else:
-        return min([r*α2, r_max])
+        return np.min([r*α2, r_max])
 
 
 def compute_dJdL(sol, sol_prev, prob, iter):
     w, λ, μ = prob.pen_w, prob.pen_λ, prob.pen_μ
-    ξ, ζ = get_slack(sol)
+    ξ, ζ = get_slack(sol) #
     g_prev, _ = compute_g(sol_prev, prob)
     h_prev, _ = compute_h(sol_prev, prob)
     g, _ = compute_g(sol, prob)
     h, _ = compute_h(sol, prob)
-    h_p = np.array([ele if ele >= 0 else 0 for ele in h])
+    # h_p = np.array([ele if ele >= 0 else 0 for ele in h])
     J0 = compute_f0(sol_prev) + compute_P(g_prev, h_prev, w, λ, μ)
     J1 = compute_f0(sol) + compute_P(g, h, w, λ, μ)
     L = compute_f0(sol) + compute_P(ξ, ζ, w, λ, μ)
@@ -140,6 +140,7 @@ def compute_dJdL(sol, sol_prev, prob, iter):
     # print(ΔJ,ΔL)
     # print(g.shape, h_p.shape)
     # χ = np.linalg.norm(np.stack((g, h_p)))
+    h_p = np.array([ele if ele >= 0 else 0 for ele in h])
     χ = np.linalg.norm(np.concatenate((g,h_p)))
     print(ΔL)
     if ΔL <= 1e-9 and iter!=0:
@@ -192,10 +193,12 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
         # compute the errors
         ΔJ, ΔL, χ = compute_dJdL(sol, sol_prev, prob, k)
         
-        if ΔL < 1e-4:
+        if ΔL < 1e-4: # or prob.epsilonfeas
             ρk = 1
         else:
             ρk = ΔJ / ΔL
+        
+        print(f"iter: {k}, ",  ", f0:", np.round(sol["f0"],4))
         
         g, _ = compute_g(sol, prob)
         g = g.reshape((prob.n_time-1, prob.nx), order='F')
@@ -210,13 +213,14 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
         log["objective decrease"].append(ρk)
         
         
-        if ρk > prob.ρ[0]:
+        if ρk >= prob.ρ[0]: # >
             # solution update
             sol_prev = sol
             prob.s_ref = sol["mu"]  # update the reference state
             print("Reference is updated")
             
             if abs(ΔJ) < δ:
+                print("Weight update!")
                 prob = update_weights(sol, prob)
                 δ = update_delta(δ, prob.γ, ΔJ)
         

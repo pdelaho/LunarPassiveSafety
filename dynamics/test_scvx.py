@@ -36,7 +36,13 @@ p_trans.linearize_trans()
 
 sol_0 = ocp_cvx(p_trans)
 print(sol_0["control_cost"])
-plot_chaser_traj_lvlh(sol_0["mu"],LU)
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+plot_chaser_traj_lvlh_scvx(sol_0["mu"],ax,LU)
+plot_ellipse_3D(p_trans.inv_Pf[:3,:3], ax, LU, TU, label='Final KOZ', color='r', type='pos')
+plt.legend()
+
 # plt.show()
 μref = sol_0["mu"]
 p_trans.s_ref = μref

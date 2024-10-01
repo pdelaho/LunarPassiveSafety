@@ -23,6 +23,7 @@ def plot_chaser_traj_lvlh(chaser_traj,LU):
     # ax.scatter(0, 0, 0, label='Target')
     ax.scatter(chaser_traj[0,0]*LU,-chaser_traj[0,1]*LU,-chaser_traj[0,2]*LU,label='Start')
     ax.scatter(chaser_traj[-1,0]*LU,-chaser_traj[-1,1]*LU,-chaser_traj[-1,2]*LU,label='End')
+    # ax.scatter(0,0,0, label='Target', color='b')
     ax.axis('equal')
     # LVLH [i,j,k] = [T, -N, -R]
     ax.set_xlabel('T [km]')
