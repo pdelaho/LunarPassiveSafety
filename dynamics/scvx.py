@@ -41,7 +41,9 @@ def scvx_ocp(prob):
     if prob.con_list["trust_region"]:
         z = s.flatten('F')
         z_bar = prob.s_ref.flatten('F')
-        con += [np.linalg.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
+        # con += [np.linalg.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
+        con += [cp.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
+
     
     # Computing the cost L = f0 + P
     f0 = cp.sum(cp.norm(a, 2, axis=1))
@@ -50,7 +52,7 @@ def scvx_ocp(prob):
     cost += P
     
     p = cp.Problem(cp.Minimize(cost), con)
-    p.solve(solver=cp.MOSEK) # cp.MOSEK, CLARABEL, SCS
+    p.solve(solver=cp.CLARABEL) # cp.MOSEK, CLARABEL, SCS
     s_opt  = s.value
     a_opt  = a.value
     l_opt  = l.value    

@@ -97,14 +97,14 @@ class SCVX_OCP():
         self.γ = 0.9
         self.ρ = np.array([0.0, 0.25, 0.7]) # 0.01 instead of 0
         self.r_minmax = np.array([1e-10, 10])
-        self.εopt = 1e-5 # was at 1e-4
-        self.εfeas = 1e-5 # was at 1e-4
+        self.εopt = 1e-4 # was at 1e-4
+        self.εfeas = 1e-4 # was at 1e-4
         self.pen_λ = None
         self.pen_μ = None
         self.pen_w = None
         self.rk = None
-        self.r0 = 0.1 # was at 2
-        self.w0 = 100 # was at 1e4
+        self.r0 = 2 # was at 2
+        self.w0 = 1e4 # was at 1e4
         
         # Data for the 3 body problem
         self.mu = mu
@@ -151,6 +151,7 @@ class SCVX_OCP():
         self.μ0 = mu0 
         self.μf = muf
         self.s_ref = None # Reference trajectory
+        self.a_ref = None # Reference controls
         
         # Matrices
         self.stm = None # State Transition Matrix
