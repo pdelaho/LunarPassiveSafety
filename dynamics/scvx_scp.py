@@ -12,11 +12,13 @@ from dynamics_translation import *
 
 """ Recreating the sequential convex programming algorithm SCvx* from Oguri's article"""
 
-def compute_f0(sol):
+def compute_f0(sol,LU,TU):
     # Check the dimension of a but pretty it should be dim 3 in my case
     a = sol["v"]   
-    f0 = np.sum(np.linalg.norm(a[:,:3], 2, axis=0)) # / 1e3 + cp.sum(cp.norm(a[:,3:], 2, axis=0)) 
-    
+    # print(a.shape)
+    # print(np.linalg.norm(a,2,axis=0).shape, np.linalg.norm(a,2,axis=1).shape)
+    f0 = np.sum(np.linalg.norm(a, 2, axis=1))*1e10 # / 1e3 + cp.sum(cp.norm(a[:,3:], 2, axis=0)) 
+    # f0 = np.sum(np.linalg.norm(a[:,:3]*LU/TU**2, 2, axis=0)) # / 1e3 + cp.sum(cp.norm(a[:,3:], 2, axis=0))          
     return f0
 
 
@@ -131,9 +133,9 @@ def compute_dJdL(sol, sol_prev, prob, iter):
     g, _ = compute_g(sol, prob)
     h, _ = compute_h(sol, prob)
     # h_p = np.array([ele if ele >= 0 else 0 for ele in h])
-    J0 = compute_f0(sol_prev) + compute_P(g_prev, h_prev, w, λ, μ)
-    J1 = compute_f0(sol) + compute_P(g, h, w, λ, μ)
-    L = compute_f0(sol) + compute_P(ξ, ζ, w, λ, μ)
+    J0 = compute_f0(sol_prev, prob.LU,prob.TU) + compute_P(g_prev, h_prev, w, λ, μ)
+    J1 = compute_f0(sol,prob.LU,prob.TU) + compute_P(g, h, w, λ, μ)
+    L = compute_f0(sol,prob.LU,prob.TU) + compute_P(ξ, ζ, w, λ, μ)
     # print(compute_f0(sol_prev))
     ΔJ = J0 - J1
     ΔL = J0 - L
@@ -198,7 +200,7 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
         else:
             ρk = ΔJ / ΔL
         
-        print(f"iter: {k}, ",  ", f0:", np.round(sol["f0"],4))
+        print(f"iter: {k}, ",  ", f0:", np.round(sol["f0"],8)) # 4 instead of 8 before
         
         g, _ = compute_g(sol, prob)
         g = g.reshape((prob.n_time-1, prob.nx), order='F')

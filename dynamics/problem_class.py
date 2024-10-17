@@ -37,6 +37,7 @@ class CR3BP_RPOD_OCP:
         self.M0 = np.radians(M0) 
         self.tf_orbit = tf   # numer of orbits
         self.control = control
+        self.control_actions = None # new self value being the control actions
         if M0 < 180:
             self.ti = self.M0 * self.period / (2*np.pi) + self.period / 2
             print('less')

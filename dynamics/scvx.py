@@ -5,7 +5,7 @@ from safe_set import *
 
 def scvx_ocp(prob):
     nx, nu   = prob.nx, prob.nu
-    A, B     = prob.stm, prob.cim # generalized dynamics 
+    A, B     = prob.stm, prob.cim # generalized dynamics
     s_0, s_f = prob.μ0, prob.μf
     n_time   = prob.n_time
     # μref = prob.s_ref
@@ -46,7 +46,8 @@ def scvx_ocp(prob):
 
     
     # Computing the cost L = f0 + P
-    f0 = cp.sum(cp.norm(a, 2, axis=1))
+    f0 = cp.sum(cp.norm(a, 2, axis=1))*1e10
+    # f0 = cp.sum(cp.norm(a, 2, axis=0))
     cost += f0
     P = prob.pen_λ.T @ l.flatten('F') + (prob.pen_w/2) * cp.norm(l)**2 # zeta is 0 so just this part of P is non-zero
     cost += P
