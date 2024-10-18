@@ -32,8 +32,8 @@ wyp   = np.array([[ -20,    0, 4,   0.0039216,    0, -0.0012745,   ],
                        [ -0.5,   0, 0.0,   0.000277778, 0, 0.00027778,  ],
                        ]) / LU
 
-p_trans.μ0 = np.array([ -20,    0, 4,   0.0039216,    0, -0.0012745])/LU
-p_trans.μf = np.array([ -12,    0, 1.4, 0.003858,     0, 0])/LU # initial situation [10/LU,6/LU,20/LU,0,0,0], in the lvlh frame
+p_trans.μf = np.array([ -12,    0, 1.4, 0.003858,     0, 0])/LU
+p_trans.μ0 = np.array([ -20,    0, 4,   0.0039216,    0, -0.0012745])/LU # initial situation [10/LU,6/LU,20/LU,0,0,0], in the lvlh frame
 # LVLH [i,j,k] = [T, -N, -R]
 
 p_trans.con_list["BRS"] = False
@@ -69,6 +69,7 @@ traj = prob.s_ref # in the LVLH frame
 print(log["f0"])
 # print(np.asarray(log["a"])[-1])
 
+# careful because controls are in the LVLH frame too, change it to RTN properly
 plt.figure()
 plt.plot(np.asarray(log["a"])[-1,:,0], label='T') # same units as acceleration m/s^2
 plt.plot(np.asarray(log["a"])[-1,:,1], label='N')

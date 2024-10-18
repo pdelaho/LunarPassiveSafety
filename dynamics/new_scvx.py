@@ -3,10 +3,10 @@ import scipy as sp
 
 from new_scp import *
 
-def scvx_update_weights(z, prob):
+def scvx_update_weights(s, a, prob):
     
-    g, _ = compute_g(z, prob)
-    h, _ = compute_h(z, prob)
+    g, _ = compute_g(s, a, prob)
+    h, _ = compute_h(s, prob)
     
     prob.pen_λ += prob.pen_w * g
     prob.pen_μ += prob.pen_w * h
@@ -35,20 +35,20 @@ def scvx_update_r(r, α, ρ, ρk, r_minmax):
 
 def scvx_compute_dJdL(sol, sol_prev, prob, iter):
     """
-    a dictionary "z" will contain all regular and slack variables that are optimzied in the problem. 
+     
     """
     
     w, λ, μ = prob.pen_w, prob.pen_λ, prob.pen_μ
     
-    g_sol, _ = compute_g(sol["z"], prob)
-    h_sol, _ = compute_h(sol["z"], prob)
+    g_sol, _ = compute_g(sol["s"],sol["a"], prob)
+    h_sol, _ = compute_h(sol["s"], prob)
     
-    g_sol_prev, _ = compute_g(sol_prev["z"], prob)
-    h_sol_prev, _ = compute_h(sol_prev["z"], prob)
+    g_sol_prev, _ = compute_g(sol_prev["s"],sol_prev["a"], prob)
+    h_sol_prev, _ = compute_h(sol_prev["s"], prob)
     
-    J0 = compute_f0(sol["z"],      prob).value + compute_P(g_sol,      h_sol,      w, λ, μ).value   
-    J1 = compute_f0(sol_prev["z"], prob).value + compute_P(g_sol_prev, h_sol_prev, w, λ, μ).value  
-    L  = compute_f0(sol["z"],      prob).value + compute_P(sol["ξ"],   sol["ζ"],   w, λ, μ).value 
+    J0 = compute_f0(sol["a"],      prob).value + compute_P(g_sol,      h_sol,      w, λ, μ).value   
+    J1 = compute_f0(sol_prev["a"], prob).value + compute_P(g_sol_prev, h_sol_prev, w, λ, μ).value  
+    L  = compute_f0(sol["a"],      prob).value + compute_P(sol["l"].flatten('F'),   sol["ζ"],   w, λ, μ).value 
     
     ΔJ = J1 - J0 
     ΔL = J1 - L 
@@ -103,8 +103,9 @@ def solve_scvx(prob):
     # initialization 
     k = 0 
     ΔJ, χ, δ = np.inf, np.inf, np.inf
-    g, _ = compute_g(sol_prev["z"], prob)
-    h, _ = compute_h(sol_prev["z"], prob)
+    g, _ = compute_g(sol_prev["s"], sol_prev["a"], prob)
+    h, _ = compute_h(sol_prev["s"], prob)
+    print(h.shape)
     prob.pen_λ, prob.pen_μ = np.zeros(np.shape(g)), np.zeros(np.shape(h))   
     
     log = {"ϵopt":[], "ϵfeas":[], "f0":[], "P":[]}
@@ -112,7 +113,13 @@ def solve_scvx(prob):
     while abs(ΔJ) > prob.ϵopt or χ > prob.ϵfeas:  # both optimality and feasibility must converge 
 
         # ==== This part is a problem-specific component ================
-
+        
+        # convexification of the passive safety constraints
+        for i in range(prob.n_time):
+            closest, _ = extract_closest_ellipsoid_scvx(prob.s_ref[i], prob.inv_PP[i], 1)
+            a = convexify_safety_constraint(prob.s_ref[i], closest, 1)
+            prob.hyperplanes[i] = a
+        
         # solve the convexified problem (affinize if needed)
         sol = solve_cvx_AL(prob, verbose=False)
         
@@ -140,11 +147,12 @@ def solve_scvx(prob):
             
             print("reference is updated... ")  
             sol_prev = sol 
-            prob.zref = sol["z"]
+            prob.sref = sol["s"]
+            prob.aref = sol["a"]
             
             if abs(ΔJ) < δ:
                 print('======= weight update! =========')
-                prob = scvx_update_weights(sol["z"], prob)
+                prob = scvx_update_weights(sol["s"], sol["a"], prob)
                 δ = scvx_update_delta(δ, prob.γ, ΔJ) 
                 
         prob.rk = scvx_update_r(prob.rk, prob.α, prob.ρ, ρk, prob.r_minmax)  
