@@ -10,13 +10,13 @@ LU = 384400 # km, distance between primary attractors
 mu = 1.215e-2 # no unit, mass parameter of the system
 TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors
 
-M = np.linspace(0,360,37)
+M = np.linspace(0,360,10)
 M_labels = [f"{int(mean_anomaly)}" for mean_anomaly in M ]
 print(M_labels)
 base = np.asarray([i for i in range(10,1,-1)])
 # rho_init = np.concatenate(([1e-2],1e-2*base, 1e-1*base, base, 10*base))
-rho_init = np.concatenate((10*base, base, 1e-1*base, 1e-2*base, [1e-2]))
-# rho_init = np.asarray([10,5,1,0.5,0.1])
+# rho_init = np.concatenate((10*base, base, 1e-1*base, 1e-2*base, [1e-2]))
+rho_init = np.asarray([100,50,10,5,1,0.5,0.1,0.05,0.01])
 rho_init_labels = [f"{rho} [km]" for rho in rho_init]
 print(rho_init_labels)
 

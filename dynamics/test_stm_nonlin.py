@@ -19,6 +19,8 @@ TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the 
 L1x = 0.83691513 # nd, position of the L1 point along the x direction
 L2x = 1.15568217 # nd, position of the L2 point along the x direction
 
+# TO DO: CLEAN UP THAT MESS AND SEE IF WE NEED ANYTHING FROM WHAT'S COMMENTED!!!
+
 def verification(initial_conditions_target_M, initial_conditions_chaser_LVLH, initial_conditions_chaser_M):
     # Getting the initial conditions from the file
     # root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

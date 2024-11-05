@@ -8,6 +8,8 @@ from ocp import *
 from postprocess import *
 from safe_set import *
 
+# TO DO: CLEAN UP THIS MESS AND SEE WHAT WERE THE ACTUAL RELEVANT TESTS FOR THE UNSAFE ELLIPSOIDS COMPUTATION
+
 L2x = 1.15568217 # nd, position of the L2 point
 
 root_folder = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,31 +19,30 @@ t, target_traj, mu, LU, TU = load_traj_data(fname)
 
 
 ## Tests for the part where we compute the unsafe ellipsoids
+
 # Defining the unsafe ellipsoid (6D, 3D for position and 3D for velocity)
 rx = 10 # km
 rx_ad = rx/LU
 rv = 0.001 # km/s
 rv_ad = rv/LU*TU
-
 Pf = np.diag([rx_ad**2, rx_ad**2, rx_ad**2, rv_ad**2, rv_ad**2, rv_ad**2])
 inv_Pf = np.linalg.inv(Pf)
 
 # Defining the final time step at which the chaser should be oustide the KOZ
 final_time_step = 1000
 
+# Initialieing the problem with the data from a json file
 p_trans = CR3BP_RPOD_OCP(
     period=t[-1], initial_conditions_target=target_traj[0], iter_max=15,
     mu=mu,LU=LU,mean_motion=2.661699e-6,
     n_time=final_time_step+1,nx=6,nu=3,M0=180,tf=0.5,mu0=None,muf=None,control=False
 )
-
 p_trans.load_traj_data(fname)
 p_trans.linearize_trans()
 
-# if final_time_step > len(p_trans.time_hrz):
-#     final_time_step = len(p_trans.time_hrz) - 1
+
 N = final_time_step
-inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf, final_time_step) # computing the unsafe ellipsoids
+inv_PP = passive_safe_ellipsoid(p_trans, N, inv_Pf, final_time_step)
 
 # print(volume_ellipsoid(inv_Pf, LU, TU),volume_ellipsoid(inv_PP[-1], LU, TU))
 
@@ -67,11 +68,8 @@ plot_ellipse_3D(inv_PP[-1,3:6,3:6], ax, LU, TU, 'Initial unsafe ellipsoid', 'r',
 ax.scatter(x_out[3],x_out[4],x_out[5], label='Start', color='k')
 plt.legend()
 
-# x_in = generate_inside_ellipsoid(inv_PP[-1], np.asarray([0,0,0,0,0,0]))
-# print(x_in, x_in @ inv_PP[-1] @ x_in.T)
 
 p_trans.μ0 = x_out
-# p_trans2.μ0 = x_in
 
 p_trans.get_chaser_nonlin_traj()
 

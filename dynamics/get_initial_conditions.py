@@ -95,7 +95,7 @@ def get_initial_conditions(M, rho0, rho_dot0):
     distance_to_target_km = rho0 # in km, CHANGE to see to which extent the linear approximation works (try up to 100km in the article)
     distance_to_target = distance_to_target_km/r12 # adimensionalized initial condition
 
-    rho_x0_LVLH = rand()*distance_to_target*random.choice([1,-1]) # NOT ENTIRELY RANDOM SINCE IT CAN'T BE NEGATIVE, CHANGE THAT!!! -> is it relevant?
+    rho_x0_LVLH = rand()*distance_to_target*random.choice([1,-1])
     rho_y0_LVLH = rand()*np.sqrt(distance_to_target**2 - rho_x0_LVLH**2)*random.choice([1,-1])
     rho_z0_LVLH = np.sqrt(distance_to_target**2 - rho_x0_LVLH**2 - rho_y0_LVLH**2)*random.choice([1,-1])
 

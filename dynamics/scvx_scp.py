@@ -13,10 +13,25 @@ from dynamics_translation import *
 """ Recreating the sequential convex programming algorithm SCvx* from Oguri's article"""
 
 def compute_f0(sol,LU,TU):
+    """Takes in a dictionary containing the current solution, and the length and time parameters
+    in the 3-body problem, returns the value of the objective/cost function.
+    Here the cost function is defined as the sum of the norm of the control actions at each timestep.
+
+    Args:
+        sol (dictionary): contains the parameters of the current solution to the problem
+        LU (float): length parameter in 3-body problem
+        TU (float): time parameter in 3-body problem
+
+    Returns:
+        float: value of the objective/cost function
+    """
+    
     # Check the dimension of a but pretty it should be dim 3 in my case
     a = sol["v"]   
-    # print(a.shape)
-    # print(np.linalg.norm(a,2,axis=0).shape, np.linalg.norm(a,2,axis=1).shape)
+    
+    # Artificially multiplied by 1e10 because otherwise value is too small to get a well working SCP
+    
+    # TO DO: CHECK THAT THE SAME COMPUTATION OF THE COST FUNCTION IS DONE EVERYWHERE
     f0 = np.sum(np.linalg.norm(a, 2, axis=1))*1e10 # / 1e3 + cp.sum(cp.norm(a[:,3:], 2, axis=0)) 
     # f0 = np.sum(np.linalg.norm(a[:,:3]*LU/TU**2, 2, axis=0)) # / 1e3 + cp.sum(cp.norm(a[:,3:], 2, axis=0))          
     return f0
@@ -25,6 +40,15 @@ def compute_f0(sol,LU,TU):
 def compute_g(sol, prob):
     """To define, it is problem dependent
     Computes the equality constraints, including the dynamics (verify that fact) of the given OCP"""
+    
+    """Takes in the dictionary containing the current solution and the SCVX_OCP related problem, 
+    returns vectors for the affine and non-convex equality constraints.
+
+    Returns:
+        n_time-1x6 vector: non-convex equality constraints linked to dynamics
+        2x6 vector: affine equality constraints to enforce initial and final states
+    """
+    
     x = sol["mu"]
     a = sol["v"]
     g_affine = np.empty((2,x.shape[1]))
@@ -50,16 +74,22 @@ def compute_g(sol, prob):
 def compute_h(sol, prob): # should include what's not sol or prob in the problem class def
     """To define, it is problem dependent
     Computes the inequality constraints, includes the unsafe ellipsoids in my case"""
+    
+    """Takes in the dictionary containing the current solution and the SCVX_OCP related problem, 
+    returns vectors for the affine and non-convex inequality constraints.
+
+    Returns:
+        1x1 vector: non-convex inequalities
+        n_time-2x1 vector: convex inequlities due to passive safety (using BRS)
+    """
     x = sol["mu"]
-    h_cvx = np.empty((prob.n_time-2)) # or prob.n_time-1?
+    h_cvx = np.empty((prob.n_time-2))
     # need to compute the vector perp. to the hyperspace tangent to the closest unsafe ellipsoid for each state between initial and final
+    # why not at the initial state as well?
     for i in range(len(x[1:-1])):
         state = x[i+1]
         inv_PP = passive_safe_ellipsoid_scvx(prob, i)
-        # print(inv_PP)
-        # print(state @ inv_PP[0] @ state)
         closest_ellipsoid, _ = extract_closest_ellipsoid_scvx(state, inv_PP, 1)
-        # print(closest_ellipsoid)
         a = convexify_safety_constraint(state, closest_ellipsoid, 1)
         h_cvx[i] = 1 - np.dot(a.reshape(6), state.reshape(6))
     h = np.zeros(1)
@@ -68,10 +98,19 @@ def compute_h(sol, prob): # should include what's not sol or prob in the problem
 
 
 def get_slack(sol):    
+    """Takes in a dictionar containing the current solution, returns the slack variables, differenciating the one
+    used in the equality constraints and the one used in the inequality constraints.
 
-    l     = sol["l"]    
-    # χ_fov = sol["χ_fov"]
-    # χ_dw  = sol["χ_dw"]  
+    Args:
+        sol (dictionary): contains the parameters of the current solution to the problem
+
+    TO DO: LOOK FOR THE SIZE OF THE FOLLOWING VECTORS
+    Returns:
+        vector: slack variable used in the equality constraints linked to the dynamics
+        vector: slack variable used in the inequality constraints linked to the passive safety
+    """
+    
+    l = sol["l"]     
     
     # equality slack 
     ξ = l.flatten('F')
@@ -83,6 +122,17 @@ def get_slack(sol):
 
 
 def compute_P(g, h, w, λ, μ):
+    """Takes in the constraints (both equalities and inequalities), and different weights associated with them,
+    returns the value of the penalty function.
+
+    Args:
+        g (_type_): _description_
+        h (_type_): _description_
+        w (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     h_pos = [i if i>=0 else 0 for i in h]
     
     return np.dot(λ, g) + (w/2)*np.linalg.norm(g)**2 + np.dot(μ, h) + (w/2)*np.linalg.norm(h_pos)**2
@@ -181,7 +231,7 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
     prob.linearize_trans()
     prob.get_unsafe_ellipsoids()
     # print(prob.hyperplanes.shape)
-    while abs(ΔJ) > prob.εopt or χ > prob.εfeas:
+    while (abs(ΔJ) > prob.εopt or χ > prob.εfeas) and k < prob.iter_max:
         # linearization of the dynamics and constraints -> get the perp vector for each half plane
         for i in range(prob.n_time):
             closest, _ = extract_closest_ellipsoid_scvx(prob.s_ref[i], prob.inv_PP[i], 1)
@@ -189,11 +239,12 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
             # print(a.shape)
             prob.hyperplanes[i] = a
         
+        # print(prob.hyperplanes.shape)
         # solve the convexified problem, get the suboptimal solution and slack variables
         sol = scvx_ocp(prob)
-        
+
         # compute the errors
-        ΔJ, ΔL, χ = compute_dJdL(sol, sol_prev, prob, k)
+        ΔJ, ΔL, χ= compute_dJdL(sol, sol_prev, prob, k)
         
         if ΔL < 1e-4: # or prob.epsilonfeas
             ρk = 1
@@ -234,6 +285,6 @@ def scvx_star(prob, sol_0, μref, fname, max_iter=100):
             print("SCvx* did not converge... terminating...")
             break
         
-    return prob, log
+    return sol, log
         
         

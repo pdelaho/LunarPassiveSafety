@@ -2,7 +2,6 @@ import dataclasses
 
 from dynamics_linearized import *
 from safe_set import *
-# from get_initial_conditions import *
 
 
 class CR3BP_RPOD_OCP:
@@ -73,15 +72,6 @@ class CR3BP_RPOD_OCP:
     def load_traj_data(self, fname):
         # Getting the reference trajectory for the target spacecraft from a json file
         time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
-        # ti_idx = np.argmin([abs(i-self.ti) for i in time]) # finding the index with the closest time step to our desired initial time
-        # self.ti_idx = ti_idx
-        # if len(time) - ti_idx - 1 - self.n_time > 0:
-        #     self.time_hrz = time[ti_idx : ti_idx + self.n_time]
-        #     self.target_traj = traj[ti_idx : ti_idx + self.n_time]
-        # else:
-            # self.time_hrz = time[ti_idx:]
-        #     self.target_traj = traj[ti_idx:]
-        # print(ti_idx, self.time_hrz, self.target_traj[0])
         self.time_hrz = time[:self.n_time]
         self.target_traj = traj[:self.n_time]
 
@@ -98,13 +88,13 @@ class SCVX_OCP():
         self.γ = 0.9
         self.ρ = np.array([0.0, 0.25, 0.7]) # 0.01 instead of 0
         self.r_minmax = np.array([1e-10, 10])
-        self.εopt = 1e-5 # was at 1e-4
-        self.εfeas = 1e-5 # was at 1e-4
+        self.εopt = 1e-4 # was at 1e-4/1e-5
+        self.εfeas = 1e-4 # was at 1e-4/1e-5
         self.pen_λ = None
         self.pen_μ = None
         self.pen_w = None
         self.rk = None
-        self.r0 = 0.1 # was at 2
+        self.r0 = 1/LU # was at 2 or 0.1
         self.w0 = 100 # was at 1e4
         
         # Data for the 3 body problem
@@ -119,12 +109,6 @@ class SCVX_OCP():
         
         # keep-out-zones 
         if koz_dim is not None:
-            # self.width_pos_koz  = koz_dim[0] # adimensionalized quantities
-            # self.length_pos_koz = koz_dim[1]
-            # self.height_pos_koz = koz_dim[2]
-            # self.width_vel_koz  = koz_dim[3]
-            # self.length_vel_koz = koz_dim[4]
-            # self.height_vel_koz = koz_dim[5]
             Pf = np.diag([koz_dim[0]**2, koz_dim[1]**2, koz_dim[2]**2, koz_dim[3]**2, koz_dim[4]**2, koz_dim[5]**2])
             self.inv_Pf = np.linalg.inv(Pf)
             self.N_BRS = N_BRS # Number of steps ahead we wanna ensure passive safety
@@ -138,6 +122,7 @@ class SCVX_OCP():
         self.M0 = np.radians(M0) # Initial mean motion of the target
         self.tf_orbit = tf   # numer of orbits
         self.control = control # Boolean, do we consider controls?
+        
         # Computing the initial time given the initial mean motion and that data starts at apoapsis
         if M0 < 180:
             self.ti = self.M0 * self.period / (2*np.pi) + self.period / 2
@@ -169,16 +154,7 @@ class SCVX_OCP():
     def load_traj_data(self, fname):
         # Getting the reference trajectory for the target spacecraft from a json file
         time, traj, self.mu, self.LU, self.TU = load_traj_data(fname)
-        # ti_idx = np.argmin([abs(i-self.ti) for i in time]) # finding the index with the closest time step to our desired initial time
-        # self.ti_idx = ti_idx
-        # if len(time) - ti_idx - 1 - self.n_time > 0:
-        #     self.time_hrz = time[ti_idx : ti_idx + self.n_time]
-        #     self.target_traj = traj[ti_idx : ti_idx + self.n_time]
-        # else:
-            # self.time_hrz = time[ti_idx:]
-        #     self.target_traj = traj[ti_idx:]
-        # print(ti_idx, self.time_hrz, self.target_traj[0])
-        self.time_hrz = time[:self.n_time + self.N_BRS]
+        self.time_hrz = time[:self.n_time + self.N_BRS] # need more time horizon to compute the BRS for the last steps of the trajectory
         self.target_traj = traj[:self.n_time + self.N_BRS] # or n_time + N_BRS - 1?
         
     def linearize_trans(self):

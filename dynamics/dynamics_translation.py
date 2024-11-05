@@ -4,9 +4,19 @@ import scipy.integrate as integrate
 from scipy.integrate import odeint
 
 from useful_small_functions import *
-# from dynamics_linearized import *
 
 def matrix_synodic_to_lvlh(traj):
+    """Takes it the state vector (position,velocity) of a spacecraft
+    in the synodic frame (centered on the Moon) and returns the
+    rotation matrix to go from the synodic to the local-vertical-local-
+    horizontal (LVLH) frame.
+
+    Args:
+        traj (6x1 vector): state vector of the spacecraft (position,velocity)
+
+    Returns:
+        3x3 matrix: rotation matrix to go from the synodic to the LVLH frames
+    """
     r = traj[:3].reshape(3)
     r_dot = traj[3:6].reshape(3)
     
@@ -34,6 +44,19 @@ def matrix_synodic_to_lvlh(traj):
     return A_syn_to_lvlh
 
 def dynamics_synodic(state,t,mu):
+    """Takes in a state vector in the synodic frame and returns 
+    the derivative using the dynamics in the synodic frame. It has 
+    to take the time to be able to use odeint on that function. It 
+    also needs the parameter mu to be able to compute the dynamics.
+
+    Args:
+        state (6x1 vector): state vector (position,velocity)
+        t (float): time step at which we have the corresponding state vector
+        mu (float): mass ratio as defined in the 3-body problem
+
+    Returns:
+        6x1 vector: derivative of state vector in the synodic frame
+    """
     ds = np.zeros(6)
     r = np.asarray(state[:3]).reshape((3,1))
     r_dot = np.asarray(state[3:6]).reshape(3)
@@ -49,6 +72,19 @@ def dynamics_synodic(state,t,mu):
     return ds
 
 def synodic_to_lvlh(syn_traj, target_traj, mu):
+    """Takes in the state vector of chaser spacecraft relative to the 
+    target in the synodic frame, the target's state vector and the mass 
+    ratio parameter mu, and returns the state vector of the chaser in 
+    the LVLH frame.
+
+    Args:
+        syn_traj (6x1 vector): chaser's state vector (position,velocity) in synodic frame
+        target_traj (6x1 vector): target's state vector (position,velocity) in synodic frame
+        mu (float): mass ratio parameter in 3-body problem
+
+    Returns:
+        6x1 vector: chaser's state vector in the LVLH frame
+    """
     rho_syn = syn_traj[:3] - target_traj[:3]
     rho_dot_syn = syn_traj[3:6] - target_traj[3:6]
     
@@ -58,14 +94,29 @@ def synodic_to_lvlh(syn_traj, target_traj, mu):
     h = np.cross(target_traj[:3].reshape(3),target_traj[3:6].reshape(3))
     der = dynamics_synodic(target_traj[:6],0,mu)
     r_ddot = der[3:6]
+    
     omega_lm_lvlh = np.zeros((3,1))
     omega_lm_lvlh[1] = - la.norm(h)/(la.norm(target_traj[:3])**2)
     omega_lm_lvlh[2] = - la.norm(target_traj[:3])/(la.norm(h)**2) * np.dot(h.reshape(3),r_ddot.reshape(3))
+    
     rho_dot_lvlh = A_syn_to_lvlh @ rho_dot_syn.reshape((3,1)) - np.cross(omega_lm_lvlh.reshape(3),rho_lvlh.reshape(3)).reshape((3,1))
-    # print(rho_lvlh,rho_dot_lvlh)
+
     return np.concatenate((rho_lvlh.reshape(3),rho_dot_lvlh.reshape(3)))
 
 def lvlh_to_synodic(lvlh_traj, target_traj, mu):
+    """Takes in the state vector of chaser spacecraft relative to the 
+    target in the LVLH frame, the target's state vector in the synodic 
+    frame and the mass ratio parameter mu, and returns the state vector 
+    of the chaser in the synodic frame.
+
+    Args:
+        lvlh_traj (6x1 vector): chaser's state vector (position,velocity) in LVLH frame
+        target_traj (6x1 vector): target's state vector (position,velocity) in the synodic frame
+        mu (float): mass ratio parameter in 3-body problem
+
+    Returns:
+        6x1 vector: chaser's state vector in synodic frame
+    """
     r_syn = np.asarray(target_traj[:3])
     r_dot_syn = np.asarray(target_traj[3:6])  
 
@@ -90,12 +141,21 @@ def lvlh_to_synodic(lvlh_traj, target_traj, mu):
     rho_vy0_syn = rho_dot_syn[1,0]
     rho_vz0_syn = rho_dot_syn[2,0]
 
-    # initial_conditions_chaser_M = [x0_M + rho_x0_M, y0_M + rho_y0_M, z0_M + rho_z0_M, vx0_M + rho_vx0_M, vy0_M + rho_vy0_M, vz0_M + rho_vz0_M]
     synodic_traj = target_traj[:6].reshape(6) + np.asarray([rho_x0_syn, rho_y0_syn, rho_z0_syn, rho_vx0_syn, rho_vy0_syn, rho_vz0_syn]).reshape(6)
     
     return synodic_traj
 
 def bary_to_synodic(bary_traj, mu):
+    """Takes in a state vector in the barycenter frame and the mass ratio,
+    returns the state vector in the synodic frame.
+
+    Args:
+        bary_traj (6x1 vector): state vector (position,velocity) in barycenter frame
+        mu (float): mass ratio parameter in 3-body problem
+
+    Returns:
+        6x1 vector: state vector in the synodic frame
+    """
     R = np.matrix([[-1, 0, 0],[0, -1, 0],[0, 0, 1]]) # Rotation matrix to go from the bary to the synodic frame
     
     syn_pos = R @ (bary_traj[:3].reshape((3,1)) - np.asarray([1-mu, 0, 0]).reshape((3,1)))
@@ -104,6 +164,17 @@ def bary_to_synodic(bary_traj, mu):
     return np.concatenate(([syn_pos[i,0] for i in range(3)], [syn_vel[j,0] for j in range(3)]))
 
 def linearized_trans(mu, traj):
+    """Takes in the mass ratio parameter and the state vector of the target
+    spacecraft in the synodic frame, returns the transition matrix for 
+    the chaser's spacecraft in the LVLH frame.
+
+    Args:
+        mu (float): mass ratio parameter
+        traj (6x1 vector): target's state vector (position,velocity) in synodic frame
+
+    Returns:
+        3x3 matrix: state transition matrix for the chaser in LVLH frame
+    """
     A = np.zeros((6,6)) # matrix in the state differential equation
     A[:3,3:] = np.eye(3)
     
@@ -131,15 +202,17 @@ def linearized_trans(mu, traj):
     Omega_li_lvlh = skew(omega_li_lvlh)
     
     # Derivatives of the norms of the angular momentum and the target's position's vector
-    j_lvlh = -h_syn / la.norm(h_syn)
+    j_lvlh = - h_syn / la.norm(h_syn)
     h_dot = - np.dot(np.cross(r_syn.reshape(3),r_ddot_syn),j_lvlh.reshape(3))
     r_dot = (1/la.norm(r_syn))*np.dot(r_syn.reshape(3),r_dot_syn)
     
     r_dddot_syn = -2*np.cross(omega_mi_syn,r_ddot_syn).reshape((3,1)) - np.cross(omega_mi_syn,np.cross(omega_mi_syn,r_dot_syn.reshape(3))).reshape((3,1)) \
         - mu*(1/la.norm(r_syn)**3)*(np.eye(3) - 3*r_syn@r_syn.T/(la.norm(r_syn)**2))@r_dot_syn.reshape((3,1)) - (1-mu)*(1/la.norm(r_syn+r_em_syn)**3)*(np.eye(3) \
         - 3*(r_syn+r_em_syn)@(r_syn+r_em_syn).T/(la.norm(r_syn+r_em_syn)**2))@r_dot_syn.reshape((3,1))
+    
     omega_lm_dot_lvlh = np.zeros((3,1))
-    omega_lm_dot_lvlh[1] = -(1/la.norm(r_syn))*(h_dot/(la.norm(r_syn)**2) + 2*r_dot*omega_lm_lvlh[1])
+    # Might be a mistake in here
+    omega_lm_dot_lvlh[1] = -(1/la.norm(r_syn))*(h_dot/(la.norm(r_syn)) + 2*r_dot*omega_lm_lvlh[1])
     omega_lm_dot_lvlh[2] = (r_dot/la.norm(r_syn) - 2*h_dot/la.norm(h_syn))*omega_lm_lvlh[2] \
         - la.norm(r_syn)/(la.norm(h_syn)**2)*np.dot(h_syn,r_dddot_syn.reshape(3))
     omega_li_dot_lvlh = omega_lm_dot_lvlh - np.cross(omega_lm_lvlh.reshape(3),(A_syn_to_lvlh@omega_mi_syn.reshape((3,1))).reshape(3)).reshape((3,1))

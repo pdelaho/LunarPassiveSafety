@@ -1,5 +1,7 @@
 import cvxpy as cp
 
+# TO DO: check if we really need 2 differents ocp functions for what I use them for
+
 def ocp_cvx(prob):
     """
     General function of the OCP.
@@ -14,14 +16,11 @@ def ocp_cvx(prob):
 
     if n_time > len(prob.time_hrz):
         n_time = len(prob.time_hrz)
+    
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
     l  = cp.Variable((n_time-1, nx))  # slack variable to prevent artificial infeasibility
-    
-    # dimensionalized variables
-    # s = s_ @ prob.P_s + prob.p_s.reshape((1,nx)) 
-    # a = a_ @ prob.P_a + prob.p_a.reshape((1,nu))
     
     # dynamics 
     con = []
@@ -31,15 +30,14 @@ def ocp_cvx(prob):
     
     if prob.control:
         con += [s[-1] == s_f]
-
     
     if prob.nu == 3:
         J = cp.sum(cp.norm(a, 2, axis=0))
     else:
-        J = cp.sum(cp.norm(a[:,:3], 2, axis=0)) + cp.sum(cp.norm(a[:,3:], 2, axis=0))
+        J = cp.sum(cp.norm(a[:,:3], 2, axis=0))*1e10 + cp.sum(cp.norm(a[:,3:], 2, axis=0))*1e10
     
     cost += J
-    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e5   # slack variable penalty, * 1e3
+    cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e5   # slack variable penalty
     
     
     p = cp.Problem(cp.Minimize(cost), con)
@@ -69,14 +67,11 @@ def ocp_cvx_scvx(prob):
 
     if n_time > len(prob.time_hrz):
         n_time = len(prob.time_hrz)
+    
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
     l  = cp.Variable((n_time-1, nx))  # slack variable to prevent artificial infeasibility
-    
-    # dimensionalized variables
-    # s = s_ @ prob.P_s + prob.p_s.reshape((1,nx)) 
-    # a = a_ @ prob.P_a + prob.p_a.reshape((1,nu))
     
     # dynamics 
     con = []

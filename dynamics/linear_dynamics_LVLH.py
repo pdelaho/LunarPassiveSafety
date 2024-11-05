@@ -224,7 +224,10 @@ def matrix_dynamics(state,t,mu):
         - mu*(1/la.norm(r_M)**3)*(np.eye(3) - 3*r_M@r_M.T/(la.norm(r_M)**2))@r_dot_M.reshape((3,1)) - (1-mu)*(1/la.norm(r_M+r_em_M)**3)*(np.eye(3) \
         - 3*(r_M+r_em_M)@(r_M+r_em_M).T/(la.norm(r_M+r_em_M)**2))@r_dot_M.reshape((3,1))
     omega_lm_dot_LVLH = np.zeros((3,1))
-    omega_lm_dot_LVLH[1] = -(1/la.norm(r_M))*(h_dot/(la.norm(r_M)**2) + 2*r_dot*omega_lm_LVLH[1])
+    # might be a mistake in the line below
+    # omega_lm_dot_LVLH[1] = -(1/la.norm(r_M))*(h_dot/(la.norm(r_M)**2) + 2*r_dot*omega_lm_LVLH[1])
+    # This new line works much better indeed
+    omega_lm_dot_LVLH[1] = -(1/la.norm(r_M))*(h_dot/(la.norm(r_M)) + 2*r_dot*omega_lm_LVLH[1])
     omega_lm_dot_LVLH[2] = (r_dot/la.norm(r_M) - 2*h_dot/la.norm(h_M))*omega_lm_LVLH[2] \
         - la.norm(r_M)/(la.norm(h_M)**2)*np.dot(h_M,r_dddot_M.reshape(3))
     omega_li_dot_LVLH = omega_lm_dot_LVLH - np.cross(omega_lm_LVLH.reshape(3),(A_M_LVLH@omega_mi_M.reshape((3,1))).reshape(3)).reshape((3,1))

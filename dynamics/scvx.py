@@ -3,9 +3,27 @@ import numpy as np
 
 from safe_set import *
 
+# ACTUAL WORK IN PROGRESS
+
 def scvx_ocp(prob):
+    """Takes in a problem statement and returns a possible optimized trajectory using Sequential 
+    Convex Programming (SCP) as described in Oguri's paper (Successive Convexification with Feasibility 
+    Guarantee via Augmented Lagrangian for Non-Convex Optimal Control Problems, 2024).
+    We want to solve a problem where a chaser's spacecraft approaches a target spacecraft
+    while ensuring passive safety using Backward Reachable Sets.
+
+    Args:
+        prob (SCVX_OCP): problem statement
+
+    Returns:
+        dictionary: regroups the follownig parameters of the optimized path: the state vectors "mu",
+                    the controls "v", the slack variable for dynamics "l", the status of the solution
+                    "status", the value of the objective function "f0", how well constraints are enforced
+                    "P", and the value of the problem (WTF IS THAT??) "value" 
+    """
+    
     nx, nu   = prob.nx, prob.nu
-    A, B     = prob.stm, prob.cim # generalized dynamics
+    A, B     = prob.stm, prob.cim
     s_0, s_f = prob.μ0, prob.μf
     n_time   = prob.n_time
     # μref = prob.s_ref
@@ -16,7 +34,7 @@ def scvx_ocp(prob):
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
     a = cp.Variable((n_time-1, nu)) 
-    l  = cp.Variable((n_time-1, nx)) # not the right shape for l
+    l  = cp.Variable((n_time-1, nx))
     
     # dynamics and boundary conditions
     con = []
@@ -25,15 +43,11 @@ def scvx_ocp(prob):
     con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
     con += [s[-1] == s_f]
     
-    # Unsafe ellipsoids constraint
+    # Unsafe ellipsoids constraints
     if prob.con_list["BRS"]:
-        # prob.inv_PP = np.empty((n_time, prob.N_BRS, nx, nx))
-        # for i in range(n_time):
-        #     ellipsoids = passive_safe_ellipsoid_scvx(prob, i)
-        #     # prob.inv_PP[i] = ellipsoids
-        #     closest, _ = extract_closest_ellipsoid_scvx(s[i], ellipsoids, 1)
-        #     a = convexify_safety_constraint(s[i], closest, 1) # SHOULDN'T BE s[i] BUT THE REFERENCE TRAJECTORY (COMPUTATIONS DONE BEFOREHAND)
-        #     con += [1 - np.dot(a,s[i]) <= 0]
+        # the computation of the unsafe ellipsoids can be done before solving the problem
+        # since they only depend on the position of the target spacecraft, which is known
+        # in advance, same with the linearized dynamics
         for i in range(n_time):
             con += [1 - prob.hyperplanes[i].T @ s[i].reshape((nx,1)) <= 0]
         
@@ -43,6 +57,7 @@ def scvx_ocp(prob):
         z_bar = prob.s_ref.flatten('F')
         # con += [np.linalg.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
         con += [cp.norm(z_bar-z, ord='inf') <= prob.rk] # check that this line does ||z_bar - z||_inf <= r
+        # What if we apply trust region to the control as well?
 
     
     # Computing the cost L = f0 + P
@@ -65,4 +80,3 @@ def scvx_ocp(prob):
     sol = {"mu": s_opt, "v": a_opt, "l": l_opt,"status": status, "f0": f0_opt, "P": P_opt, "value": value}
     
     return sol
-    
