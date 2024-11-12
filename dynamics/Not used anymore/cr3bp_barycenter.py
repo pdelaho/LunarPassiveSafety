@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def halo_propagator_with_STM(state,t,mu):
     """Dynamics of the Circular Restricted 3 Body Problem in the synodic frame centered on the barycenter of the system including the
     evolution of the State Transition Matrix (STM)
@@ -11,6 +12,7 @@ def halo_propagator_with_STM(state,t,mu):
     Returns:
         42x1 vector: derivative of the state vector according to dynamics
     """
+    
     x = state[0]
     y = state[1]
     z = state[2]
@@ -20,7 +22,7 @@ def halo_propagator_with_STM(state,t,mu):
     r1 = np.sqrt((x+mu)**2 + y**2 + z**2)
     r2 = np.sqrt((x-1+mu)**2 + y**2 + z**2)
     
-    statedot = np.zeros((42,1)) # Could it be just 42 as a 1D array?
+    statedot = np.zeros((42,1))
     statedot[0] = vx
     statedot[1] = vy
     statedot[2] = vz
@@ -69,6 +71,7 @@ def halo_propagator(state,t,mu):
     Returns:
         42x1 vector: derivative of the state vector according to dynamics
     """
+    
     x = state[0]
     y = state[1]
     z = state[2]

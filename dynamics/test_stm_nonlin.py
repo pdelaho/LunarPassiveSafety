@@ -12,6 +12,7 @@ import time
 
 from linear_dynamics_LVLH import propagator_absolute,M_to_LVLH,integrate_matrix,matrix_dynamics,propagator_relative
 from useful_small_functions import *
+# from code_yuji import *
 
 r12 = 384400 # km, distance between primary attractors
 mu = 1.215e-2 # no unit, mass parameter of the system
@@ -184,7 +185,10 @@ def verification(initial_conditions_target_M, initial_conditions_chaser_LVLH, in
     for i in range(1,y_orbit.shape[0]):
         delta_t = t_simulation[i]-t_simulation[i-1] # jouer sur les indices MAIS EN FIXANT LES CONDITIONS INITIALES
         # start = time.perf_counter()
+        
+        # phi = sc.linalg.expm(delta_t * dyn_lin_rel_cr3bp_lvlh(y_orbit[i,:6], mu))
         phi = sc.linalg.expm(delta_t*matrix_dynamics(y_orbit[i,:],t_simulation[i],mu)) # jouer sur les indices
+        
         # end = time.perf_counter()
         # timing_exp[i] = end-start
         # start2 = time.perf_counter()
