@@ -39,7 +39,7 @@ def get_phi(t, A, p=5):
 
     phi = np.eye(A.shape[0])
     for i in range(1, p):
-        phi += np.linalg.matrix_power(A*t, i) / np.math.factorial(i)
+        phi += np.linalg.matrix_power(A*t, i) / math.factorial(i)
     return phi
 
 

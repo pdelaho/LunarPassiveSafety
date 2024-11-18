@@ -1,3 +1,7 @@
+""" This file implements the dynamics of a spacecraft in the context of the Circular Restricted 3-Body Problem with the evolution
+of the state transition matrix (STM), designed to be used with odeint """
+
+
 import numpy as np
 
 
@@ -13,52 +17,50 @@ def halo_propagator_with_STM(state,t,mu):
         42x1 vector: derivative of the state vector according to dynamics
     """
     
-    x = state[0]
-    y = state[1]
-    z = state[2]
-    vx = state[3]
-    vy = state[4]
-    vz = state[5]
-    r1 = np.sqrt((x+mu)**2 + y**2 + z**2)
-    r2 = np.sqrt((x-1+mu)**2 + y**2 + z**2)
+    x, y, z, vx, vy, vz = state[:6]
+
+    y2, z2 = y**2, z**2
+    r1 = np.sqrt((x + mu)**2 + y2 + z2)
+    r2 = np.sqrt((x - 1 + mu)**2 + y2 + z2)
     
     statedot = np.zeros((42,1))
-    statedot[0] = vx
-    statedot[1] = vy
-    statedot[2] = vz
-    statedot[3] = x + 2*vy - (1-mu)*(x+mu)/(r1**3) - mu*(x-1+mu)/(r2**3)
-    statedot[4] = y - 2*vx -(1-mu)*y/(r1**3) - mu*y/(r2**3)
-    statedot[5] = -(1-mu)*z/(r1**3) - mu*z/(r2**3)
+    statedot[:3] = [[vx], [vy], [vz]]
     
-    dUdxx = 1 - (1-mu)/(r1**3) + 3*(1-mu)*(x+mu)**2/(r1**5) - mu/(r2**3) + 3*mu*(x-1+mu)**2/(r2**5)
-    dUdyy = 1 - (1-mu)/(r1**3) + 3*(1-mu)*(y**2)/(r1**5) - mu/(r2**3) + 3*mu*(y**2)/(r2**5)
-    dUdzz = -(1-mu)/(r1**3) + 3*(1-mu)*(z**2)/(r1**5) - mu/(r2**3) + 3*mu*(z**2)/(r2**5)
-    dUdxy = 3*(1-mu)*(x+mu)*y/(r1**5) + 3*mu*(x-1+mu)*y/(r2**5)
-    dUdxz = 3*(1-mu)*(x+mu)*z/(r1**5) + 3*mu*(x-1+mu)*z/(r2**5)
-    dUdyz = 3*(1-mu)*y*z/(r1**5) + 3*mu*y*z/(r2**5)
+    r1_cubed, r2_cubed = r1**3, r2**3
+    one_minus_mu = 1 - mu
+    statedot[3] = x + 2 * vy - (one_minus_mu * (x + mu) / r1_cubed) - (mu * (x - one_minus_mu) / r2_cubed)
+    statedot[4] = y - 2 * vx - (one_minus_mu * y / r1_cubed) - (mu * y / r2_cubed)
+    statedot[5] = - one_minus_mu * z / r1_cubed - mu * z / r2_cubed
     
-    A = np.matrix([[0, 0, 0, 1, 0, 0],
-         [0, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 1],
-         [dUdxx, dUdxy, dUdxz, 0, 2, 0],
-         [dUdxy, dUdyy, dUdyz, -2, 0, 0],
-         [dUdxz, dUdyz, dUdzz, 0, 0, 0]])
+    r1_fifth, r2_fifth = r1**5, r2**5
+    dUdxx = 1 - (one_minus_mu / r1_cubed) + (3 * one_minus_mu * (x + mu)**2 / r1_fifth) \
+            - (mu / r2_cubed) + (3 * mu * (x - one_minus_mu)**2 / r2_fifth)
+            
+    dUdyy = 1 - (one_minus_mu / r1_cubed) + (3 * one_minus_mu * (y**2) / r1_fifth) \
+            - (mu / r2_cubed) + (3 * mu * (y**2) / r2_fifth)
+            
+    dUdzz = - (one_minus_mu / r1_cubed) + (3 * one_minus_mu * (z**2) / r1_fifth) \
+            - (mu / r2_cubed) + (3 * mu * (z**2) / r2_fifth)
+            
+    dUdxy = (3 * one_minus_mu * (x + mu) * y / r1_fifth) + (3 * mu * (x - one_minus_mu) * y / r2_fifth)
+    
+    dUdxz = (3 * one_minus_mu * (x + mu) * z / r1_fifth) + (3 * mu * (x - one_minus_mu) * z / r2_fifth)
+    
+    dUdyz = (3 * one_minus_mu * y * z / r1_fifth) + (3 * mu * y * z / r2_fifth)
+    
+    A = np.array([
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 1],
+        [dUdxx, dUdxy, dUdxz, 0, 2, 0],
+        [dUdxy, dUdyy, dUdyz, -2, 0, 0],
+        [dUdxz, dUdyz, dUdzz, 0, 0, 0]
+        ])
 
-    STM = np.matrix([[state[6], state[7], state[8], state[9], state[10], state[11]],
-           [state[12], state[13], state[14], state[15], state[16], state[17]],
-           [state[18], state[19], state[20], state[21], state[22], state[23]],
-           [state[24], state[25], state[26], state[27], state[28], state[29]],
-           [state[30], state[31], state[32], state[33], state[34], state[35]],
-           [state[36], state[37], state[38], state[39], state[40], state[41]]])
-    
-    dSTMdt = A@STM
-    statedot[6:12] = dSTMdt.T[:,0]
-    statedot[12:18] = dSTMdt.T[:,1]
-    statedot[18:24] = dSTMdt.T[:,2]
-    statedot[24:30] = dSTMdt.T[:,3]
-    statedot[30:36] = dSTMdt.T[:,4]
-    statedot[36:42] = dSTMdt.T[:,5]
-    
+    STM = np.array(state[6:42]).reshape((6, 6))
+    dSTMdt = A @ STM
+    statedot[6:42] = dSTMdt.T.reshape(-1, 1)
+
     return statedot.reshape(len(statedot))
 
 def halo_propagator(state,t,mu):
@@ -69,23 +71,22 @@ def halo_propagator(state,t,mu):
         t (scalar): time
 
     Returns:
-        42x1 vector: derivative of the state vector according to dynamics
+        6x1 vector: derivative of the state vector according to dynamics
     """
     
-    x = state[0]
-    y = state[1]
-    z = state[2]
-    vx = state[3]
-    vy = state[4]
-    r1 = np.sqrt((x+mu)**2 + y**2 + z**2)
-    r2 = np.sqrt((x-1+mu)**2 + y**2 + z**2)
+    x, y, z, vx, vy, vz = state
     
-    statedot = np.zeros(6)
-    statedot[0] = vx
-    statedot[1] = vy
-    statedot[2] = state[5]
-    statedot[3] = x + 2*vy - (1-mu)*(x+mu)/(r1**3) - mu*(x-1+mu)/(r2**3)
-    statedot[4] = y - 2*vx -(1-mu)*y/(r1**3) - mu*y/(r2**3)
-    statedot[5] = -(1-mu)*z/(r1**3) - mu*z/(r2**3)
+    y2, z2 = y**2, z**2
+    r1 = np.sqrt((x + mu)**2 + y2 + z2)
+    r2 = np.sqrt((x - 1 + mu)**2 + y2 + z2)
+    
+    statedot = np.zeros((6,1))
+    statedot[:3] = vx, vy, vz
+    
+    r1_cubed, r2_cubed = r1**3, r2**3
+    one_minus_mu = 1 - mu
+    statedot[3] = x + 2 * vy - (one_minus_mu * (x + mu) / r1_cubed) - (mu * (x - one_minus_mu) / r2_cubed)
+    statedot[4] = y - 2 * vx - (one_minus_mu * y / r1_cubed) - (mu * y / r2_cubed)
+    statedot[5] = - one_minus_mu * z / r1_cubed - mu * z / r2_cubed
     
     return statedot
