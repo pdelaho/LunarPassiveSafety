@@ -3,25 +3,29 @@ import math
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from test_stm_nonlin import *
-from get_initial_conditions import *
+from test_stm_nonlin import verification
+from get_initial_conditions import get_initial_conditions
 
 LU = 384400 # km, distance between primary attractors
 mu = 1.215e-2 # no unit, mass parameter of the system
-TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors
+TU = 1 / (2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors
 
-M = np.linspace(0,360,37)
-M_labels = [f"{int(mean_anomaly)}" for mean_anomaly in M ]
+
+M = np.array([i for i in range(0, 361, 30)])
+print(M)
+# M_labels = [f"{int(mean_anomaly)}" for mean_anomaly in M[ : : 3] ]
+M_labels = [[f"{int(mean_anomaly)} °", "", ""] for mean_anomaly in M[ : -1: 3]]
+M_labels = np.concatenate((M_labels))
+M_labels = np.concatenate((M_labels, [f"{int(M[-1])} °"]))
 print(M_labels)
-base = np.asarray([i for i in range(10,1,-1)])
-# rho_init = np.concatenate(([1e-2],1e-2*base, 1e-1*base, base, 10*base))
-rho_init = np.concatenate((10*base, base, 1e-1*base, 1e-2*base, [1e-2]))
-# rho_init = np.asarray([100,50,10,5,1,0.5,0.1,0.05,0.01])
+base = np.asarray([i for i in range(10, 1, -1)])
+# rho_init = np.concatenate((10 * base, base, 1e-1 * base, 1e-2 * base, [1e-2]))
+rho_init = np.asarray([100, 50, 10, 5, 1, 0.5, 0.1, 0.05, 0.01])
 rho_init_labels = [f"{rho} [km]" for rho in rho_init]
 print(rho_init_labels)
 
-mat_dist = np.empty((len(M),len(rho_init))) # just store the maximum error on the 12 hour propagation
-mat_vel = np.empty((len(M),len(rho_init)))
+mat_dist = np.empty((len(M), len(rho_init))) # just store the maximum error on the 12 hour propagation
+mat_vel  = np.empty((len(M), len(rho_init)))
 
 
 for i in range(len(M)):
@@ -31,12 +35,12 @@ for i in range(len(M)):
         errors_dist = np.empty(5)
         errors_vel = np.empty(5)
         for k in range(5):
-            IC_target_M, IC_chaser_LVLH, IC_chaser_M = get_initial_conditions(np.radians(M[i]),rho_init[j],0)
+            IC_target_M, IC_chaser_LVLH, IC_chaser_M = get_initial_conditions(np.radians(M[i]), rho_init[j], 0)
             error_distance, error_velocity = verification(IC_target_M, IC_chaser_LVLH, IC_chaser_M)
             errors_dist[k] = max(error_distance)
-            errors_vel[k] = max(error_velocity)
-        mat_dist[i,j] = math.floor(math.log10(np.average(errors_dist)*LU*1e3)) # see to use math.floor in addition
-        mat_vel[i,j] = math.floor(math.log10(np.average(errors_vel)*LU*1e3/TU))
+            errors_vel[k]  = max(error_velocity)
+        mat_dist[i,j] = math.floor(math.log10(np.average(errors_dist) * LU * 1e3)) # see to use math.floor in addition
+        mat_vel[i,j] = math.floor(math.log10(np.average(errors_vel) * LU * 1e3 / TU))
 
 ax2 = sns.heatmap(mat_dist.T, linewidth=0.5)
 

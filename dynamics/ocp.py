@@ -19,14 +19,14 @@ def ocp_cvx(prob):
     
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
-    a = cp.Variable((n_time-1, nu)) 
-    l  = cp.Variable((n_time-1, nx))  # slack variable to prevent artificial infeasibility
+    a = cp.Variable((n_time - 1, nu)) 
+    l  = cp.Variable((n_time - 1, nx))  # slack variable to prevent artificial infeasibility
     
     # dynamics 
     con = []
     cost = 0 
     con += [s[0] == s_0]
-    con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
+    con += [s[i + 1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time - 1)]
     
     if prob.control:
         con += [s[-1] == s_f]
@@ -34,7 +34,7 @@ def ocp_cvx(prob):
     if prob.nu == 3:
         J = cp.sum(cp.norm(a, 2, axis=0))
     else:
-        J = cp.sum(cp.norm(a[:,:3], 2, axis=0))*1e10 + cp.sum(cp.norm(a[:,3:], 2, axis=0))*1e10
+        J = cp.sum(cp.norm(a[:, :3], 2, axis=0)) * 1e10 + cp.sum(cp.norm(a[:, 3:], 2, axis=0)) * 1e10
     
     cost += J
     cost += cp.sum(cp.norm(l, 2, axis=0)) * 1e5   # slack variable penalty
@@ -70,14 +70,14 @@ def ocp_cvx_scvx(prob):
     
     # normalized vbariables 
     s = cp.Variable((n_time, nx))
-    a = cp.Variable((n_time-1, nu)) 
-    l  = cp.Variable((n_time-1, nx))  # slack variable to prevent artificial infeasibility
+    a = cp.Variable((n_time - 1, nu)) 
+    l  = cp.Variable((n_time - 1, nx))  # slack variable to prevent artificial infeasibility
     
     # dynamics 
     con = []
     cost = 0 
     con += [s[0] == s_0]
-    con += [s[i+1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time-1)]
+    con += [s[i + 1] == A[i] @ s[i] + B[i] @ a[i] + l[i] for i in range(n_time - 1)]
     
     if prob.control:
         con += [s[-1] == s_f]

@@ -101,7 +101,7 @@ for i in range(len(period[::2])):
       # Plotting the halo orbit for each initial condition
       t_simulation = np.linspace(0, period[i], 3000)
       y_orbit = integrate.odeint(halo_propagator_with_STM, adjusted_conditions, t_simulation, args=(mu,))
-      ax.plot(y_orbit[:,0] - np.ones_like(y_orbit[:,0]) * (1 - mu), y_orbit[:,1], y_orbit[:,2], color='b', linewidth=0.5)
+      ax.plot(y_orbit[:, 0] - np.ones_like(y_orbit[:, 0]) * (1 - mu), y_orbit[:, 1], y_orbit[:, 2], color='b', linewidth=0.5)
 
 ax.scatter(0, 0, 0, label='Moon')
 ax.scatter(L2x - (1 - mu), 0, 0, label='L2')

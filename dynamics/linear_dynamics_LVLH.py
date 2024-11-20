@@ -77,7 +77,7 @@ def propagator_absolute(state, t, mu):
     return ds
 
 
-def matrix_dynamics(state,mu):
+def matrix_dynamics(state, mu):
     """Computes the state transition matrix according to the linearized dynamics in Franzini's paper
 
     Args:
@@ -245,17 +245,17 @@ def propagator_relative(state, t, mu):
     return ds
 
 
-def integrate_matrix(state,t,mu):
+def integrate_matrix(state, t, mu):
     ds = np.zeros((12,)) # Derivative of the state vector
     ds[:3] = np.asarray(state[3:6]).reshape(3)
     
     # Second derivative of the target's position expressed in the Moon frame
-    der = propagator_absolute(state,t,mu)
+    der = propagator_absolute(state, t, mu)
     ds[3:6] = np.asarray(der[3:6]).reshape(3)
     
     # Computing the matrix to get the derivative of the relative distance and velocity of the chaser
-    A = matrix_dynamics(state,mu)
-    der = (A @ state[6:].reshape((6,1))).reshape(6)
+    A = matrix_dynamics(state, mu)
+    der = (A @ state[6:].reshape((6, 1))).reshape(6)
     ds[6:] = der
     
     return ds

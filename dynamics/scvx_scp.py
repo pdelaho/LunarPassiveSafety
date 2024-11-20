@@ -3,12 +3,14 @@ import scipy as sp
 import cvxpy as cp
 import os
 import sys
+import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
 from safe_set import *
 from scvx import *
 from useful_small_functions import *
 from dynamics_translation import *
+from postprocess import plot_ellipse_3D_scvx
 
 """ Recreating the sequential convex programming algorithm SCvx* from Oguri's article"""
 
@@ -90,7 +92,16 @@ def compute_h(sol, prob): # should include what's not sol or prob in the problem
         state = x[i+1]
         inv_PP = passive_safe_ellipsoid_scvx(prob, i)
         closest_ellipsoid, _ = extract_closest_ellipsoid_scvx(state, inv_PP, 1)
+        # fig = plt.figure()
+        # ax = fig.add_subplot(projection='3d')
+        # # print(np.squeeze(closest_ellipsoid[0]))
+        # plot_ellipse_3D_scvx(np.squeeze(closest_ellipsoid[0]), ax, prob.LU, prob.TU, "Closest", 'r')
+        # ax.scatter(state[0] * prob.LU, state[1] * prob.LU, state[2] * prob.LU, label="Current state")
+        # ax.set_aspect("equal")
         a = convexify_safety_constraint(state, closest_ellipsoid, 1)
+        # xx, yy = np.meshgrid(range(3), range(3))
+        # z = (-a[0] * xx - a[1] * yy + 1) * 1. / a[2]
+        # ax.plot_surface(xx, yy, z, alpha=1, label='Hyperplane')
         h_cvx[i] = 1 - np.dot(a.reshape(6), state.reshape(6))
     h = np.zeros(1)
     

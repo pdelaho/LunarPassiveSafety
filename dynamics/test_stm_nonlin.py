@@ -187,7 +187,7 @@ def verification(initial_conditions_target_M, initial_conditions_chaser_LVLH, in
         # start = time.perf_counter()
         
         # phi = sc.linalg.expm(delta_t * dyn_lin_rel_cr3bp_lvlh(y_orbit[i,:6], mu))
-        phi = sc.linalg.expm(delta_t*matrix_dynamics(y_orbit[i,:],t_simulation[i],mu)) # jouer sur les indices
+        phi = sc.linalg.expm(delta_t*matrix_dynamics(y_orbit[i,:],mu)) # jouer sur les indices
         
         # end = time.perf_counter()
         # timing_exp[i] = end-start

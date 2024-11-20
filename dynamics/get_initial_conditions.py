@@ -2,6 +2,7 @@
 # See the target_orbits.txt to see previous orbital initial conditions used for the target's orbit
 
 import numpy as np
+import numpy.linalg as la
 import csv
 from numpy.random import rand
 from numpy import cross
@@ -11,22 +12,21 @@ import random
 import os
 import sys
 
-from linear_dynamics_LVLH import *
-from dynamics_translation import *
-from dynamics_linearized import *
+from linear_dynamics_LVLH import propagator_absolute, M_to_LVLH
+
 
 # General data for the CR3BP
 r12 = 384400 # km, distance between primary attractors, from JPL website 389703
 mu = 1.215e-2 # no unit, mass parameter of the system, from JPL website 1.215058560962404e-2
-TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors, from JPL website 382981
+TU = 1 / (2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors, from JPL website 382981
 L1x = 0.83691513 # nd, position of the L1 point along the x direction
 L2x = 1.15568217 # nd, position of the L2 point along the x direction
 
 def get_initial_conditions(M, rho0, rho_dot0):
-    R = np.matrix([[-1, 0, 0],[0, -1, 0],[0, 0, 1]]) # rotation matrix to go from the bary to the Moon frame and conversely (+ translation along x)
+    R = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]) # rotation matrix to go from the bary to the Moon frame and conversely (+ translation along x)
     r12 = 384400 # km, distance between primary attractors, from JPL website 389703
     mu = 1.215e-2 # no unit, mass parameter of the system, from JPL website 1.215058560962404e-2
-    TU = 1/(2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors, from JPL website 382981
+    TU = 1 / (2.661699e-6) # s, inverse of the relative angular frequency between the two primary attractors, from JPL website 382981
     L1x = 0.83691513 # nd, position of the L1 point along the x direction
     L2x = 1.15568217 # nd, position of the L2 point along the x direction
     
@@ -36,11 +36,11 @@ def get_initial_conditions(M, rho0, rho_dot0):
     z0_bary = -2.1592634764719765E-1 # nd 
 
     # nitial position w.r.t. the barycenter of the Earth-Moon system in the Moon frame
-    initial_position_M = R@np.matrix([x0_bary-(1-mu), y0_bary, z0_bary]).reshape((3,1))
+    initial_position_M = R @ np.matrix([x0_bary - (1 - mu), y0_bary, z0_bary]).reshape((3, 1))
     # print(initial_position_M)
-    x0_M = initial_position_M[0,0]
-    y0_M = initial_position_M[1,0]
-    z0_M = initial_position_M[2,0]
+    x0_M = initial_position_M[0, 0]
+    y0_M = initial_position_M[1, 0]
+    z0_M = initial_position_M[2, 0]
 
     # # Initial velocity w.r.t. the barycenter of the Earth-Moon system in the bary frame
     vx0_bary = 4.2453615136710976E-13 # nd 
@@ -48,10 +48,10 @@ def get_initial_conditions(M, rho0, rho_dot0):
     vz0_bary = 2.3343675990673871E-12 # nd 
 
     # Initial velocity w.r.t. the barycenter of the Earth-Moon system in the Moon frame
-    initial_velocity_M = R@np.matrix([vx0_bary, vy0_bary, vz0_bary]).reshape((3,1))
-    vx0_M = initial_velocity_M[0,0]
-    vy0_M = initial_velocity_M[1,0]
-    vz0_M = initial_velocity_M[2,0]
+    initial_velocity_M = R @ np.matrix([vx0_bary, vy0_bary, vz0_bary]).reshape((3, 1))
+    vx0_M = initial_velocity_M[0, 0]
+    vy0_M = initial_velocity_M[1, 0]
+    vz0_M = initial_velocity_M[2, 0]
     period = 1.8036821222727220E+0 # nd 
 
     # Initial conditions in the Moon frame for the target spacecraft
@@ -63,16 +63,16 @@ def get_initial_conditions(M, rho0, rho_dot0):
     # M = np.radians(180) # TO CHANGE TO TRY DIFFERENT INITIAL CONDITIONS
     # Using M = 2*pi*t/T where T is the orbit period
     # Not sure if the following line is the correct
-    t = M*period/(2*np.pi) - period/2 # time at which we need to stop the simulation to get the "new" initial conditions
+    t = M * period / (2 * np.pi) - period / 2 # time at which we need to stop the simulation to get the "new" initial conditions
     # print(t)
-    t_IC = np.linspace(0,t,1000)
+    t_IC = np.linspace(0, t, 1000)
 
-    position = scipy.integrate.odeint(propagator_absolute,initial_conditions_M,t_IC,args=(mu,))
+    position = scipy.integrate.odeint(propagator_absolute, initial_conditions_M, t_IC, args=(mu,))
     # print(position[-1,:],initial_conditions_M)
-    initial_conditions_M = position[-1,:]
-    x0_M = initial_conditions_M[0]
-    y0_M = initial_conditions_M[1]
-    z0_M = initial_conditions_M[2]
+    initial_conditions_M = position[-1, :]
+    x0_M  = initial_conditions_M[0]
+    y0_M  = initial_conditions_M[1]
+    z0_M  = initial_conditions_M[2]
     vx0_M = initial_conditions_M[3]
     vy0_M = initial_conditions_M[4]
     vz0_M = initial_conditions_M[5]
@@ -93,17 +93,17 @@ def get_initial_conditions(M, rho0, rho_dot0):
     # So that we can actually compare results with the same initial conditions more easily
 
     distance_to_target_km = rho0 # in km, CHANGE to see to which extent the linear approximation works (try up to 100km in the article)
-    distance_to_target = distance_to_target_km/r12 # adimensionalized initial condition
+    distance_to_target = distance_to_target_km / r12 # adimensionalized initial condition
 
-    rho_x0_LVLH = rand()*distance_to_target*random.choice([1,-1])
-    rho_y0_LVLH = rand()*np.sqrt(distance_to_target**2 - rho_x0_LVLH**2)*random.choice([1,-1])
-    rho_z0_LVLH = np.sqrt(distance_to_target**2 - rho_x0_LVLH**2 - rho_y0_LVLH**2)*random.choice([1,-1])
+    rho_x0_LVLH = rand() * distance_to_target * random.choice([1, -1])
+    rho_y0_LVLH = rand() * np.sqrt(distance_to_target**2 - rho_x0_LVLH**2)*random.choice([1, -1])
+    rho_z0_LVLH = np.sqrt(distance_to_target**2 - rho_x0_LVLH**2 - rho_y0_LVLH**2)*random.choice([1, -1])
 
     velocity_rel_target_km = rho_dot0 # in km/s, CHANGE to see to which extent the linear approximation works
-    velocity_rel_target = velocity_rel_target_km/r12*TU # adimensionalized initial condition
+    velocity_rel_target = velocity_rel_target_km / r12 * TU # adimensionalized initial condition
 
-    rho_vx0_LVLH = rand()*velocity_rel_target
-    rho_vy0_LVLH = rand()*np.sqrt(velocity_rel_target**2 - rho_vx0_LVLH**2)
+    rho_vx0_LVLH = rand() * velocity_rel_target
+    rho_vy0_LVLH = rand() * np.sqrt(velocity_rel_target**2 - rho_vx0_LVLH**2)
     rho_vz0_LVLH = np.sqrt(velocity_rel_target**2 - rho_vx0_LVLH**2 - rho_vy0_LVLH**2)
     # print(rho_vx0_LVLH,rho_vy0_LVLH,rho_vz0_LVLH)
 
@@ -113,30 +113,30 @@ def get_initial_conditions(M, rho0, rho_dot0):
                                     rho_vz0_LVLH]
 
     # Computing the initial LVLH frame to get the rotation matrix and get the initial conditions in the Moon synodic frame
-    r_M_init = np.asarray([[x0_M],[y0_M],[z0_M]])
-    r_dot_M_init = np.asarray([[vx0_M],[vy0_M],[vz0_M]])  
+    r_M_init = np.asarray([[x0_M], [y0_M], [z0_M]])
+    r_dot_M_init = np.asarray([[vx0_M], [vy0_M], [vz0_M]])  
 
-    [A_M_LVLH_init,_,_,_] = M_to_LVLH(r_M_init.reshape(3),r_dot_M_init.reshape(3))
-    rho_init_LVLH = np.asarray([[rho_x0_LVLH],[rho_y0_LVLH],[rho_z0_LVLH]]).reshape((3,1))
+    [A_M_LVLH_init,_,_,_] = M_to_LVLH(r_M_init.reshape(3), r_dot_M_init.reshape(3))
+    rho_init_LVLH = np.asarray([[rho_x0_LVLH], [rho_y0_LVLH], [rho_z0_LVLH]]).reshape((3, 1))
     # rho_init_M = ((A_M_LVLH_init.T)@rho_init_LVLH).reshape(3)
-    [rho_x0_M,rho_y0_M,rho_z0_M] = ((A_M_LVLH_init.T)@rho_init_LVLH).reshape(3)
+    [rho_x0_M,rho_y0_M,rho_z0_M] = ((A_M_LVLH_init.T) @ rho_init_LVLH).reshape(3)
 
-    h_init = cross(initial_conditions_M[:3],initial_conditions_M[3:])
-    der_state_init = propagator_absolute(initial_conditions_M,0,mu)
+    h_init = cross(initial_conditions_M[:3], initial_conditions_M[3:])
+    der_state_init = propagator_absolute(initial_conditions_M, 0, mu)
     r_ddot_M_init = der_state_init[3:6]
     omega_lm_LVLH_init = np.zeros(3)
-    omega_lm_LVLH_init[1] = - la.norm(h_init)/(la.norm(initial_conditions_M[:3])**2)
-    omega_lm_LVLH_init[2] = -la.norm(initial_conditions_M[:3])/(la.norm(h_init)**2) * np.dot(h_init, r_ddot_M_init)
+    omega_lm_LVLH_init[1] = - la.norm(h_init) / (la.norm(initial_conditions_M[:3])**2)
+    omega_lm_LVLH_init[2] = - la.norm(initial_conditions_M[:3]) / (la.norm(h_init)**2) * np.dot(h_init, r_ddot_M_init)
 
-    rho_dot_init_LVLH = np.zeros((3,1))
+    rho_dot_init_LVLH = np.zeros((3, 1))
     rho_dot_init_LVLH[0] = rho_vx0_LVLH
     rho_dot_init_LVLH[1] = rho_vy0_LVLH
     rho_dot_init_LVLH[2] = rho_vz0_LVLH
 
-    rho_dot_init_M = (A_M_LVLH_init.T)@(rho_dot_init_LVLH + cross(omega_lm_LVLH_init.reshape(3),rho_init_LVLH.reshape(3)).reshape((3,1)))
-    rho_vx0_M = rho_dot_init_M[0,0]
-    rho_vy0_M = rho_dot_init_M[1,0]
-    rho_vz0_M = rho_dot_init_M[2,0]
+    rho_dot_init_M = (A_M_LVLH_init.T) @ (rho_dot_init_LVLH + cross(omega_lm_LVLH_init.reshape(3), rho_init_LVLH.reshape(3)).reshape((3, 1)))
+    rho_vx0_M = rho_dot_init_M[0, 0]
+    rho_vy0_M = rho_dot_init_M[1, 0]
+    rho_vz0_M = rho_dot_init_M[2, 0]
 
     initial_conditions_chaser_M = [x0_M + rho_x0_M, y0_M + rho_y0_M, z0_M + rho_z0_M, vx0_M + rho_vx0_M, vy0_M + rho_vy0_M, vz0_M + rho_vz0_M]
 

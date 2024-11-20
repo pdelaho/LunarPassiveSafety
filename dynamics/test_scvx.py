@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
-from problem_class import *
+from problem_class import SCVX_OCP
 from scvx_scp import *
 from ocp import *
 from postprocess import *
@@ -19,9 +19,9 @@ t, target_traj, mu, LU, TU = load_traj_data(fname)
 dim = np.array([1/LU, 1/LU, 1/LU, 0.0001/LU*TU, 0.0001/LU*TU, 0.0001/LU*TU])
 
 # N_BRS = 0 means no backward reachable sets, = 1 means collision avoidance (no planning for the future)
-p_trans = SCVX_OCP(period=t[-1],initial_conditions_target=target_traj[0], N_BRS=1, iter_max=25, koz_dim=dim,
-                 mu=1.215e-2,LU=384400,mean_motion=2.661699e-6,
-                 n_time=100,nx=6,nu=3,M0=180,tf=1,mu0=None,muf=None,control=True)
+p_trans = SCVX_OCP(period=t[-1], initial_conditions_target=target_traj[0], N_BRS=1, iter_max=25, koz_dim=dim,
+                 mu=1.215e-2, LU=384400, mean_motion=2.661699e-6,
+                 n_time=100, nx=6, nu=3, M0=180, tf=1, mu0=None, muf=None, control=True)
 
 # Array of way points to test my scp program
 wyp   = np.array([[ -20,    0, 4,   0.0039216,    0, -0.0012745,   ],
@@ -33,7 +33,7 @@ wyp   = np.array([[ -20,    0, 4,   0.0039216,    0, -0.0012745,   ],
                        [ -0.5,   0, 0.0,   0.000277778, 0, 0.00027778,  ],
                        ]) / LU
 
-p_trans.μ0 = np.array([ -12,    0, 1.4, 0.003858,     0, 0])/LU
+p_trans.μ0 = np.array([ -12,    0, 1.4, 0.003858,     0,  0])/LU
 p_trans.μf = np.array([ -20,    0, 4,   0.0039216,    0, -0.0012745])/LU # initial situation [10/LU,6/LU,20/LU,0,0,0], in the lvlh frame
 # LVLH [i,j,k] = [T, -N, -R]
 

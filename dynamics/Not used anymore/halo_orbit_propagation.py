@@ -29,7 +29,7 @@ period = 3.3898323438578979E+0 # in TU, for Lyapounov orbit about L1: 2.70415885
 initial_STM = np.asarray(np.eye(6).flatten())
 initial_state = np.concatenate(([x0, y0, z0, vx0, vy0, vz0], initial_STM))
 
-t_simulation = np.linspace(0,period,6000)
+t_simulation = np.linspace(0, period, 6000)
 y_orbit = integrate.odeint(halo_propagator_with_STM, initial_state, t_simulation, args=(mu,))
 
 # Plot the orbit before single-shooting differenciation correction

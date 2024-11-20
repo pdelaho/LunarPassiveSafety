@@ -28,6 +28,7 @@ def halo_propagator_with_STM(state,t,mu):
     
     r1_cubed, r2_cubed = r1**3, r2**3
     one_minus_mu = 1 - mu
+    
     statedot[3] = x + 2 * vy - (one_minus_mu * (x + mu) / r1_cubed) - (mu * (x - one_minus_mu) / r2_cubed)
     statedot[4] = y - 2 * vx - (one_minus_mu * y / r1_cubed) - (mu * y / r2_cubed)
     statedot[5] = - one_minus_mu * z / r1_cubed - mu * z / r2_cubed
